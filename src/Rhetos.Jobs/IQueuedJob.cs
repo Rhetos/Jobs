@@ -2,7 +2,7 @@
 
 namespace Rhetos.Jobs
 {
-	public interface IJob : IEntity
+	public interface IQueuedJob : IEntity
 	{
 	}
 }

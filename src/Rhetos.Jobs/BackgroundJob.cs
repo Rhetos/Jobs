@@ -4,55 +4,59 @@ using Newtonsoft.Json;
 using Rhetos.Dom.DefaultConcepts;
 using Rhetos.Logging;
 using Rhetos.Persistence;
+using Rhetos.Utilities;
 
 namespace Rhetos.Jobs
 {
 	public class BackgroundJob : IBackgroundJob
 	{
-		private readonly GenericRepository<IJob> _taskRepository;
+		private readonly GenericRepository<IQueuedJob> _taskRepository;
+		private readonly IUserInfo _userInfo;
 		private readonly ILogger _logger;
 
-		private readonly List<JobInstance> _jobInstances = new List<JobInstance>();
+		private readonly List<IJob> _jobInstances = new List<IJob>();
 
-		private struct JobInstance
-		{
-			public string ActionName { get; set; }
-			public string ActionParameters { get; set; }
-		}
-
-		public BackgroundJob(ILogProvider logProvider, GenericRepository<IJob> taskRepository, IPersistenceTransaction persistenceTransaction)
+		public BackgroundJob(ILogProvider logProvider, GenericRepository<IQueuedJob> taskRepository, IPersistenceTransaction persistenceTransaction, IUserInfo userInfo)
 		{
 			_taskRepository = taskRepository;
+			_userInfo = userInfo;
 			_logger = logProvider.GetLogger("RhetosJobs");
 			persistenceTransaction.BeforeClose += PersistenceTransactionOnBeforeClose;
 		}
 
 		private void PersistenceTransactionOnBeforeClose()
 		{
-			foreach (var jobInstance in _jobInstances) 
-				EnqueueToHangfire(jobInstance);
+			foreach (var job in _jobInstances) 
+				EnqueueToHangfire(job);
 		}
 
-		private void EnqueueToHangfire(JobInstance jobInstance)
+		private void EnqueueToHangfire(IJob job)
 		{
-			var job = _taskRepository.CreateInstance();
-			job.ID = Guid.NewGuid();
-			_taskRepository.Insert(job);
+			var queuedJob = _taskRepository.CreateInstance();
+			queuedJob.ID = Guid.NewGuid();
+			job.Id = queuedJob.ID;
+			_taskRepository.Insert(queuedJob);
 
-			Hangfire.BackgroundJob.Enqueue<IJobExecuter>(executer => executer.ExecuteJob(job.ID, jobInstance.ActionName, jobInstance.ActionParameters));
+			Hangfire.BackgroundJob.Enqueue<IJobExecuter>(executer => executer.ExecuteJob(job));
 		}
 
-		public void Enqueue(object action)
+		public void Enqueue(object action, bool executeInUserContext = false, bool optimizeDuplicates = true)
 		{
-			var jobInstance = new JobInstance
+			var jobInstance = new Job
 			{
 				ActionName = action.GetType().FullName,
 				ActionParameters = JsonConvert.SerializeObject(action)
 			};
 
-			var index = _jobInstances.IndexOf(jobInstance);
-			if (index >= 0)
-				_jobInstances.RemoveAt(index);
+			if (executeInUserContext)
+				jobInstance.ExecuteAsUser = _userInfo.UserName;
+
+			if (optimizeDuplicates)
+			{
+				var index = _jobInstances.IndexOf(jobInstance);
+				if (index >= 0)
+					_jobInstances.RemoveAt(index);
+			}
 
 			_jobInstances.Add(jobInstance);
 		}

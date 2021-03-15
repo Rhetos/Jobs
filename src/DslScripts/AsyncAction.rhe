@@ -2,11 +2,13 @@
 {
 	Entity Job
 	{
-		Implements 'Rhetos.Jobs.IJob, Rhetos.Jobs' { RegisteredImplementation; }	
+		Implements 'Rhetos.Jobs.IQueuedJob, Rhetos.Jobs' { RegisteredImplementation; }	
 	}
 	
 	Entity TheEntity
 	{
+		Logging { AllProperties; }	
+		
 		ShortString Code { Autocode; DefaultValue 'item => "+"';}
 		LongString Description;
 	}
@@ -16,7 +18,7 @@
 		var id = Guid.NewGuid();
 		var action = new RhetosJobs.TheJob{ Description = $"TheJob started from Happy action {id}." };
 		repository.RhetosJobs.TheEntity.Insert(new RhetosJobs.TheEntity { Description = action.Description });
-		backgroundJob.Enqueue(action);
+		backgroundJob.Enqueue(action, true);
 		backgroundJob.Enqueue(action);
 		backgroundJob.Enqueue(action);
 		backgroundJob.Enqueue(action);
@@ -54,6 +56,8 @@
 	
 	Entity ExecutedJob
 	{
+		Logging { AllProperties; }	
+
 		LongString Description;
 	}
 }

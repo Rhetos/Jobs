@@ -1,43 +1,43 @@
 ﻿using System;
 using System.Data;
 using System.Data.SqlClient;
+using Autofac;
 using Newtonsoft.Json;
 using Rhetos.Dom;
 using Rhetos.Dom.DefaultConcepts;
 using Rhetos.Extensibility;
 using Rhetos.Logging;
+using Rhetos.Security;
 using Rhetos.Utilities;
 
 namespace Rhetos.Jobs
 {
 	public class JobExecuter : IJobExecuter
 	{
-		private readonly IDomainObjectModel _domainObjectModel;
-		private readonly INamedPlugins<IActionRepository> _actionPlugins;
 		private readonly ConnectionString _connectionString;
 		private readonly ILogger _logger;
 
-		public JobExecuter(ILogProvider logProvider, IDomainObjectModel domainObjectModel, INamedPlugins<IActionRepository> actionPlugins, ConnectionString connectionString)
+		public JobExecuter(ILogProvider logProvider, ConnectionString connectionString)
 		{
-			_domainObjectModel = domainObjectModel;
-			_actionPlugins = actionPlugins;
 			_connectionString = connectionString;
 			_logger = logProvider.GetLogger("RhetosJobs");
 		}
 
-		public void ExecuteJob(Guid jobId, string actionName, string actionParameters)
+		public void ExecuteJob(IJob job)
 		{
-			_logger.Info("ExecuteTask started");
-
-			if (!JobExists(jobId, _connectionString))
+			if (!JobExists(job.Id, _connectionString))
 				return;
 
-			_logger.Info("ExecuteTask resolving task ");
+			using (var scope = new ProcessContainer().CreateTransactionScopeContainer(builder => CustomizeScope(builder, job.ExecuteAsUser)))
+			{
+				var actions = scope.Resolve<INamedPlugins<IActionRepository>>();
+				var actionType = scope.Resolve<IDomainObjectModel>().GetType(job.ActionName);
+				var actionRepository = actions.GetPlugin(job.ActionName);
+				var parameters = JsonConvert.DeserializeObject(job.ActionParameters, actionType);
+				actionRepository.Execute(parameters);
 
-			var actionType = _domainObjectModel.GetType(actionName);
-			var actionRepository = _actionPlugins.GetPlugin(actionName);
-			var parameters = JsonConvert.DeserializeObject(actionParameters, actionType);
-			actionRepository.Execute(parameters);
+				scope.CommitChanges();
+			}
 		}
 
 		private static bool JobExists(Guid jobId, string connectionString)
@@ -53,6 +53,30 @@ namespace Rhetos.Jobs
 				//If transaction that created job failed there will be no job scheduled and count will be zero
 				return table.Rows.Count > 0;
 			}
+		}
+
+		private void CustomizeScope(ContainerBuilder builder, string userName = null)
+		{
+			if (string.IsNullOrWhiteSpace(userName))
+				builder.RegisterType(typeof(ProcessUserInfo)).As<IUserInfo>();
+			else
+				builder.RegisterInstance(new JobExecuterUserInfo(userName)).As<IUserInfo>();
+		}
+
+		class JobExecuterUserInfo : IUserInfo
+		{
+			public JobExecuterUserInfo(string userName)
+			{
+				UserName = userName;
+				IsUserRecognized = true;
+				Workstation = "Async job";
+			}
+
+			public bool IsUserRecognized { get; }
+			public string UserName { get; }
+			public string Workstation { get; }
+
+			public string Report() { return UserName + "," + Workstation; }
 		}
 	}
 }
