@@ -42,13 +42,13 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="RhetosJobsExtensions.cs" />
-    <Compile Include="TaskSheduler.cs" />
+    <Compile Include="IJob.cs" />
+    <Compile Include="IJobExecuter.cs" />
+    <Compile Include="JobExecuter.cs" />
+    <Compile Include="JobScheduler.cs" />
     <Compile Include="AutofacConfiguration.cs" />
     <Compile Include="RhetosJobsService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="AsyncActionListener.cs" />
-    <Compile Include="TaskExecuter.cs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Hangfire">

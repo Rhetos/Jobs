@@ -1,32 +1,38 @@
 ﻿Module RhetosJobs
 {
-	Entity Task
+	Entity Job
 	{
-		Implements 'Rhetos.Jobs.ITask, Rhetos.Jobs' { RegisteredImplementation; }	
-		ShortString Name;
-		LongString Parameters;
+		Implements 'Rhetos.Jobs.IJob, Rhetos.Jobs' { RegisteredImplementation; }	
+	}
+	
+	Entity TheEntity
+	{
+		ShortString Code { Autocode; DefaultValue 'item => "+"';}
+		LongString Description;
 	}
 	
 	Action Happy '(parameters, repository, userInfo) => 
 	{
 		var id = Guid.NewGuid();
 		var action = new RhetosJobs.TheJob{ Description = $"TheJob started from Happy action {id}." };
-		taskSheduler.ScheduleTask(new RhetosJobs.Task{ID = id}.FromAction(action));
+		repository.RhetosJobs.TheEntity.Insert(new RhetosJobs.TheEntity { Description = action.Description });
+		jobScheduler.ScheduleJob(action);
 	}'
 	{
-		RepositoryUses 'taskSheduler' 'Rhetos.Jobs.TaskSheduler, Rhetos.Jobs';
+		RepositoryUses 'jobScheduler' 'Rhetos.Jobs.IJobScheduler, Rhetos.Jobs';
 	}
 	
 	Action HappyWithWait '(parameters, repository, userInfo) => 
 	{
 		var id = Guid.NewGuid();
 		var action = new RhetosJobs.TheJob{ Description = $"TheJob started from HappyWithWait action {id}." };
-		taskSheduler.ScheduleTask(new RhetosJobs.Task{ID = id}.FromAction(action));
+		repository.RhetosJobs.TheEntity.Insert(new RhetosJobs.TheEntity { Description = action.Description });
+		jobScheduler.ScheduleJob(action);
 		System.Threading.Thread.Sleep(5000);
 		throw new Rhetos.UserException("Ne može");
 	}'
 	{
-		RepositoryUses 'taskSheduler' 'Rhetos.Jobs.TaskSheduler, Rhetos.Jobs';
+		RepositoryUses 'jobScheduler' 'Rhetos.Jobs.IJobScheduler, Rhetos.Jobs';
 	}
 
 	Action TheJob '(parameters, repository, userInfo) => 
@@ -34,6 +40,7 @@
 		var logger = logProvider.GetLogger("RhetosJobs");
 		logger.Write(Rhetos.Logging.EventType.Info, () => parameters.Description);
 		repository.RhetosJobs.ExecutedJob.Insert(new RhetosJobs.ExecutedJob { Description = parameters.Description});
+		repository.RhetosJobs.TheEntity.Insert(new RhetosJobs.TheEntity { Description = parameters.Description });
 	}'
 	{
 		LongString Description;

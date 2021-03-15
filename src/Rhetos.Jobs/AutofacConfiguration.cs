@@ -1,8 +1,5 @@
-﻿using System;
-using System.ComponentModel.Composition;
+﻿using System.ComponentModel.Composition;
 using Autofac;
-using Rhetos.Logging;
-using Rhetos.Utilities;
 
 namespace Rhetos.Jobs
 {
@@ -12,8 +9,8 @@ namespace Rhetos.Jobs
 		protected override void Load(ContainerBuilder builder)
 		{
 			builder.RegisterType<RhetosJobsService>().As<IService>();
-			builder.RegisterType<TaskSheduler>().InstancePerLifetimeScope();
-			builder.RegisterType<TaskExecuter>().InstancePerLifetimeScope();
+			builder.RegisterType<JobScheduler>().As<IJobScheduler>().InstancePerLifetimeScope();
+			builder.RegisterType<JobExecuter>().As<IJobExecuter>().InstancePerLifetimeScope();
 
 			base.Load(builder);
 		}
