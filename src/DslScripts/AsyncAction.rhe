@@ -9,8 +9,9 @@
 	
 	Action Happy '(parameters, repository, userInfo) => 
 	{
-		var action = new RhetosJobs.TheJob{ Description = $"TheJob started from Happy action." };
-		taskSheduler.ScheduleTask(new RhetosJobs.Task().FromAction(action));
+		var id = Guid.NewGuid();
+		var action = new RhetosJobs.TheJob{ Description = $"TheJob started from Happy action {id}." };
+		taskSheduler.ScheduleTask(new RhetosJobs.Task{ID = id}.FromAction(action));
 	}'
 	{
 		RepositoryUses 'taskSheduler' 'Rhetos.Jobs.TaskSheduler, Rhetos.Jobs';
@@ -18,9 +19,11 @@
 	
 	Action HappyWithWait '(parameters, repository, userInfo) => 
 	{
-		var action = new RhetosJobs.TheJob{ Description = $"TheJob started from HappyWithWait action." };
-		taskSheduler.ScheduleTask(new RhetosJobs.Task().FromAction(action));
+		var id = Guid.NewGuid();
+		var action = new RhetosJobs.TheJob{ Description = $"TheJob started from HappyWithWait action {id}." };
+		taskSheduler.ScheduleTask(new RhetosJobs.Task{ID = id}.FromAction(action));
 		System.Threading.Thread.Sleep(5000);
+		throw new Rhetos.UserException("Ne može");
 	}'
 	{
 		RepositoryUses 'taskSheduler' 'Rhetos.Jobs.TaskSheduler, Rhetos.Jobs';
@@ -30,10 +33,17 @@
 	{
 		var logger = logProvider.GetLogger("RhetosJobs");
 		logger.Write(Rhetos.Logging.EventType.Info, () => parameters.Description);
+		repository.RhetosJobs.ExecutedJob.Insert(new RhetosJobs.ExecutedJob { Description = parameters.Description});
 	}'
 	{
 		LongString Description;
 		RepositoryUses 'logProvider' 'Rhetos.Logging.ILogProvider, Rhetos.Logging.Interfaces';
+	}
+	
+	
+	Entity ExecutedJob
+	{
+		LongString Description;
 	}
 	
 }

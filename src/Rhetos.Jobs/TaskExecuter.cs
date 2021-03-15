@@ -12,24 +12,24 @@ using Rhetos.Utilities;
 
 namespace Rhetos.Jobs
 {
-	public class TaskExecuter
+	public interface ITaskExecuter
+	{
+		void ExecuteTask(Guid taskId, string actionName, string actionParameters);
+	}
+
+	public class TaskExecuter : ITaskExecuter
 	{
 		private readonly ConnectionString _connectionString;
-
+		private readonly ILogProvider _logProvider;
 		private readonly ILogger _logger;
-		private readonly INamedPlugins<IActionRepository> _actionPlugins;
-		private readonly IDomainObjectModel _domainObjectModel;
-		// private readonly IContainer _container;
 
-		public TaskExecuter(ConnectionString connectionString, ILogProvider logProvider, INamedPlugins<IActionRepository> actionPlugins, IDomainObjectModel domainObjectModel)//, IContainer container)
+		public TaskExecuter(ConnectionString connectionString, ILogProvider logProvider)
 		{
 			_connectionString = connectionString;
+			_logProvider = logProvider;
 			_logger = logProvider.GetLogger("RhetosJobs");
 			_logger.Info("TaskExecuter initalized");
 
-			_actionPlugins = actionPlugins;
-			_domainObjectModel = domainObjectModel;
-			// _container = container;
 		}
 
 		// public void ExecuteTask(Guid? taskId)
@@ -66,28 +66,32 @@ namespace Rhetos.Jobs
 
 			_logger.Info("ExecuteTask resolving task ");
 
-			var actionType = _domainObjectModel.GetType(actionName);
-			var actionRepository = _actionPlugins.GetPlugin(actionName);
-			var parameters = JsonConvert.DeserializeObject(actionParameters, actionType);
-			actionRepository.Execute(parameters);
+			// var actionType = _domainObjectModel.GetType(actionName);
+			// var actionRepository = _actionPlugins.GetPlugin(actionName);
+			// var parameters = JsonConvert.DeserializeObject(actionParameters, actionType);
+			// actionRepository.Execute(parameters);
+
+
+			using (var scope = new ProcessContainer(logProvider:_logProvider).CreateTransactionScopeContainer(CustomizeScope))
+			{
+				var logger = scope.Resolve<ILogProvider>().GetLogger("RhetosJobs");
+				logger.Info("Inner process action execution started");
+				var actions = scope.Resolve<INamedPlugins<IActionRepository>>();
+				var actionType = scope.Resolve<IDomainObjectModel>().GetType(actionName);
+				var actionRepository = actions.GetPlugin(actionName);
+				var parameters = JsonConvert.DeserializeObject(actionParameters, actionType);
+				actionRepository.Execute(parameters);
+			
+				scope.CommitChanges();
+			}
 
 			_logger.Info("ExecuteTask task executed");
 
-			// using (var scope = new TransactionScopeContainer(_container, CustomizeScope))
-			// {
-			// 	var actions = scope.Resolve<INamedPlugins<IActionRepository>>();
-			// 	var actionType = scope.Resolve<IDomainObjectModel>().GetType(task.Name);
-			// 	var actionRepository = actions.GetPlugin(task.Name);
-			// 	var parameters = JsonConvert.DeserializeObject(task.Parameters, actionType);
-			// 	actionRepository.Execute(parameters);
-			//
-			// 	scope.CommitChanges();
-			// }
 		}
 
-		// private void CustomizeScope(ContainerBuilder builder)
-		// {
-		// 	builder.RegisterType<ProcessUserInfo>().As<IUserInfo>();
-		// }
+		private void CustomizeScope(ContainerBuilder builder)
+		{
+			builder.RegisterType<ProcessUserInfo>().As<IUserInfo>();
+		}
 	}
 }
