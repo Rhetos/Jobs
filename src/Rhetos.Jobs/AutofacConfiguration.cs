@@ -9,7 +9,7 @@ namespace Rhetos.Jobs
 		protected override void Load(ContainerBuilder builder)
 		{
 			builder.RegisterType<RhetosJobsService>().As<IService>();
-			builder.RegisterType<JobScheduler>().As<IJobScheduler>().InstancePerLifetimeScope();
+			builder.RegisterType<BackgroundJob>().As<IBackgroundJob>().InstancePerLifetimeScope();
 			builder.RegisterType<JobExecuter>().As<IJobExecuter>().InstancePerLifetimeScope();
 
 			base.Load(builder);

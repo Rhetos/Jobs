@@ -44,8 +44,9 @@
   <ItemGroup>
     <Compile Include="IJob.cs" />
     <Compile Include="IJobExecuter.cs" />
+    <Compile Include="IBackgroundJob.cs" />
     <Compile Include="JobExecuter.cs" />
-    <Compile Include="JobScheduler.cs" />
+    <Compile Include="BackgroundJob.cs" />
     <Compile Include="AutofacConfiguration.cs" />
     <Compile Include="RhetosJobsService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
