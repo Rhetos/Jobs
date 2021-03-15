@@ -1,0 +1,30 @@
+﻿<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+  <metadata>
+    <id>Rhetos.Jobs</id>
+    <version>1.0.0-dev</version>
+    <authors>Omega software</authors>
+    <owners>Omega software</owners>
+    <projectUrl>https://github.com/rhetos/rhetos</projectUrl>
+    <description>This package is a plugin for Rhetos development platform.</description>
+    <copyright>Copyright Omega software 2019</copyright>
+    <tags>Rhetos plugin</tags>
+    <releaseNotes>
+</releaseNotes>
+    <dependencies>
+      <dependency id="Rhetos" version="4.2.0" />
+      <dependency id="Rhetos.CommonConcepts" version="4.2.0" />
+      <dependency id="Microsoft.Extensions.Hosting" version="5.0.0" />
+      <dependency id="SqlTableDependency" version="8.5.8" />
+      <dependency id="Hangfire" version="1.7.19" />
+      <dependency id="Hangfire.AspNet" version="0.2.0" />
+      <dependency id="HangFire.Autofac" version="2.3.1" />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="DslScripts\**\*" target="DslScripts" />
+    <file src="Rhetos.Jobs\bin\Debug\Rhetos.Jobs.dll" target="lib\net472" />
+    <file src="Rhetos.Jobs\bin\Debug\Rhetos.Jobs.pdb" target="lib\net472" />
+    <file src="..\Readme.md" target="" />
+  </files>
+</package>

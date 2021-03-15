@@ -1,0 +1,110 @@
+﻿Module RhetosJobs
+{
+	Entity Task
+	{
+		Implements 'Rhetos.Jobs.ITask, Rhetos.Jobs' { RegisteredImplementation; }	
+		ShortString Name;
+		LongString Parameters;
+	}
+	
+	Action Happy '(parameters, repository, userInfo) => 
+	{
+		var id = Guid.NewGuid();
+		var task = new RhetosJobs.Task{ ID = id, Name = "RhetosJobs.TheJob", Parameters = $"TheJob {id} started from Happy action." };
+		taskSheduler.ScheduleTask(task);
+	}'
+	{
+		RepositoryUses 'taskSheduler' 'Rhetos.Jobs.TaskSheduler, Rhetos.Jobs';
+	}
+	
+	Action HappyWithWait '(parameters, repository, userInfo) => 
+	{
+		var id = Guid.NewGuid();
+		var task = new RhetosJobs.Task{ ID = id, Name = "RhetosJobs.TheJob", Parameters = $"TheJob {id} started from HappyWithWait action." };
+		taskSheduler.ScheduleTask(task);
+		System.Threading.Thread.Sleep(5000);
+	}'
+	{
+		RepositoryUses 'taskSheduler' 'Rhetos.Jobs.TaskSheduler, Rhetos.Jobs';
+	}
+
+	Action TheJob '(parameters, repository, userInfo) => 
+	{
+		var logger = logProvider.GetLogger("RhetosJobs");
+		logger.Write(Rhetos.Logging.EventType.Info, () => parameters.Description);
+	}'
+	{
+		LongString Description;
+		RepositoryUses 'logProvider' 'Rhetos.Logging.ILogProvider, Rhetos.Logging.Interfaces';
+	}
+	
+}
+
+// Module RhetosJobs
+// {
+    // Entity Task
+    // {
+        // DenyUserEdit;
+
+        // Implements 'TaskQueue.RhetosExtensions.ITask, TaskQueue.RhetosExtensions' { RegisteredImplementation; }
+
+        // ShortString ActionName { Required; }
+        // LongString Parameters { Required; }
+        // DateTime ScheduledAt { Required; CreationTime; }
+        // Reference ScheduledBy Common.Principal { SystemRequired; DenyUserEdit; CreatedBy; }
+        // ShortString GroupKey { Required; }
+        // Integer Attempts { Required; DefaultValue 'item => 1'; }
+        // Bool ExecuteAsAdminUser { DefaultValue 'item => false'; }
+    // }
+    
+    // Entity TaskExecutionResult
+    // {
+        // DenyUserEdit;
+        
+        // Implements 'TaskQueue.RhetosExtensions.ITaskExecutionResult, TaskQueue.RhetosExtensions' { RegisteredImplementation; }
+
+        // Reference Task { Required; Detail; }
+        // Bool CompletedSuccessfully { Required; }
+        // LongString ErrorMessage;
+        // LongString ErrorDetails;
+        // DateTime StartedAt { Required; }
+        // Datetime FinishedAt { Required; }
+        // ShortString ExecutedAsUser;
+        
+        // UniqueMultiple 'Task StartedAt';
+    // }
+    
+    // SqlQueryable TaskToExecute
+    // "
+        // SELECT
+            // t.ID,
+            // t.ActionName,
+            // t.Parameters,
+            // t.ScheduledAt,
+            // t.ScheduledByID,
+            // t.GroupKey,
+            // t.Attempts,
+            // t.ExecuteAsAdminUser
+        // FROM
+            // TaskQueue.Task t
+            // OUTER APPLY (
+                // SELECT TOP 1 * 
+                // FROM TaskQueue.TaskExecutionResult ter
+                // WHERE ter.TaskID = t.ID AND ter.CompletedSuccessfully = 1
+                // ORDER BY StartedAt DESC
+            // ) executionResult
+        // WHERE 
+            // executionResult.ID IS NULL
+    // "
+    // {
+        // Implements 'TaskQueue.RhetosExtensions.ITaskToExecute, TaskQueue.RhetosExtensions' { RegisteredImplementation; }
+
+        // LongString ActionName;
+        // LongString Parameters;
+        // DateTime ScheduledAt;
+        // Reference ScheduledBy Common.Principal;
+        // ShortString GroupKey;
+        // Integer Attempts;
+        // Bool ExecuteAsAdminUser;
+    // }
+// }
