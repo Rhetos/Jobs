@@ -42,6 +42,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="RhetosJobsExtensions.cs" />
     <Compile Include="TaskSheduler.cs" />
     <Compile Include="AutofacConfiguration.cs" />
     <Compile Include="RhetosJobsService.cs" />

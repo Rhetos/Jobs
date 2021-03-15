@@ -1,4 +1,7 @@
-﻿using Rhetos.Dom.DefaultConcepts;
+﻿using System;
+using Newtonsoft.Json;
+using Rhetos.Dom;
+using Rhetos.Dom.DefaultConcepts;
 using Rhetos.Logging;
 
 namespace Rhetos.Jobs
@@ -12,10 +15,12 @@ namespace Rhetos.Jobs
 	public class TaskSheduler
 	{
 		private readonly GenericRepository<ITask> _taskRepository;
+		private readonly IDomainObjectModel _domainObjectModel;
 		private readonly ILogger _logger;
-		public TaskSheduler(ILogProvider logProvider, GenericRepository<ITask> taskRepository)
+		public TaskSheduler(ILogProvider logProvider, GenericRepository<ITask> taskRepository, IDomainObjectModel domainObjectModel)
 		{
 			_taskRepository = taskRepository;
+			_domainObjectModel = domainObjectModel;
 			_logger = logProvider.GetLogger("RhetosJobs");
 		}
 
@@ -28,6 +33,13 @@ namespace Rhetos.Jobs
 		// 	if (waitInterval != null)
 		// 		Thread.Sleep(waitInterval.Value);
 		// }
+
+		class Task : ITask
+		{
+			public Guid ID { get; set; }
+			public string Name { get; set; }
+			public string Parameters { get; set; }
+		}
 
 		public void ScheduleTask(ITask task)
 		{

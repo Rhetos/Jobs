@@ -9,9 +9,8 @@
 	
 	Action Happy '(parameters, repository, userInfo) => 
 	{
-		var id = Guid.NewGuid();
-		var task = new RhetosJobs.Task{ ID = id, Name = "RhetosJobs.TheJob", Parameters = $"TheJob {id} started from Happy action." };
-		taskSheduler.ScheduleTask(task);
+		var action = new RhetosJobs.TheJob{ Description = $"TheJob started from Happy action." };
+		taskSheduler.ScheduleTask(new RhetosJobs.Task().FromAction(action));
 	}'
 	{
 		RepositoryUses 'taskSheduler' 'Rhetos.Jobs.TaskSheduler, Rhetos.Jobs';
@@ -19,9 +18,8 @@
 	
 	Action HappyWithWait '(parameters, repository, userInfo) => 
 	{
-		var id = Guid.NewGuid();
-		var task = new RhetosJobs.Task{ ID = id, Name = "RhetosJobs.TheJob", Parameters = $"TheJob {id} started from HappyWithWait action." };
-		taskSheduler.ScheduleTask(task);
+		var action = new RhetosJobs.TheJob{ Description = $"TheJob started from HappyWithWait action." };
+		taskSheduler.ScheduleTask(new RhetosJobs.Task().FromAction(action));
 		System.Threading.Thread.Sleep(5000);
 	}'
 	{

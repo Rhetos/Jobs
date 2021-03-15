@@ -17,19 +17,18 @@ namespace Rhetos.Jobs
 		private readonly ConnectionString _connectionString;
 
 		private readonly ILogger _logger;
-		// private readonly INamedPlugins<IActionRepository> _actionPlugins;
-		//
-		// private readonly IDomainObjectModel _domainObjectModel;
+		private readonly INamedPlugins<IActionRepository> _actionPlugins;
+		private readonly IDomainObjectModel _domainObjectModel;
 		// private readonly IContainer _container;
 
-		public TaskExecuter(ConnectionString connectionString, ILogProvider logProvider)//, INamedPlugins<IActionRepository> actionPlugins, IDomainObjectModel domainObjectModel)//, IContainer container)
+		public TaskExecuter(ConnectionString connectionString, ILogProvider logProvider, INamedPlugins<IActionRepository> actionPlugins, IDomainObjectModel domainObjectModel)//, IContainer container)
 		{
 			_connectionString = connectionString;
 			_logger = logProvider.GetLogger("RhetosJobs");
 			_logger.Info("TaskExecuter initalized");
 
-			// _actionPlugins = actionPlugins;
-			// _domainObjectModel = domainObjectModel;
+			_actionPlugins = actionPlugins;
+			_domainObjectModel = domainObjectModel;
 			// _container = container;
 		}
 
@@ -65,12 +64,14 @@ namespace Rhetos.Jobs
 			if(table.Rows.Count == 0)
 				return;
 
+			_logger.Info("ExecuteTask resolving task ");
 
-			// var actionType = _domainObjectModel.GetType(actionName);
-			// var actionRepository = _actionPlugins.GetPlugin(actionName);
-			// var parameters = JsonConvert.DeserializeObject(actionParameters, actionType);
-			// actionRepository.Execute(parameters);
+			var actionType = _domainObjectModel.GetType(actionName);
+			var actionRepository = _actionPlugins.GetPlugin(actionName);
+			var parameters = JsonConvert.DeserializeObject(actionParameters, actionType);
+			actionRepository.Execute(parameters);
 
+			_logger.Info("ExecuteTask task executed");
 
 			// using (var scope = new TransactionScopeContainer(_container, CustomizeScope))
 			// {
