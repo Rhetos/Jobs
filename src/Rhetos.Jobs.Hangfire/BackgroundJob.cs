@@ -20,7 +20,7 @@ namespace Rhetos.Jobs.Hangfire
 		{
 			_taskRepository = taskRepository;
 			_userInfo = userInfo;
-			_logger = logProvider.GetLogger("RhetosJobs");
+			_logger = logProvider.GetLogger(InternalExtensions.LoggerName);
 			persistenceTransaction.BeforeClose += PersistenceTransactionOnBeforeClose;
 		}
 
@@ -44,7 +44,7 @@ namespace Rhetos.Jobs.Hangfire
 			_logger.Trace($"Job enqueued in Hangfire.|{jobInfo}");
 		}
 
-		public void Enqueue(object action, bool executeInUserContext = false, bool optimizeDuplicates = true)
+		public void Enqueue(object action, bool executeInUserContext = true, bool optimizeDuplicates = true)
 		{
 			var job = new Job
 			{

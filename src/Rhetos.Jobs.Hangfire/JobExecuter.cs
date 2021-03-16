@@ -20,7 +20,7 @@ namespace Rhetos.Jobs.Hangfire
 		public JobExecuter(ILogProvider logProvider, ConnectionString connectionString)
 		{
 			_connectionString = connectionString;
-			_logger = logProvider.GetLogger("RhetosJobs");
+			_logger = logProvider.GetLogger(InternalExtensions.LoggerName);
 		}
 
 		public void ExecuteJob(IJob job)

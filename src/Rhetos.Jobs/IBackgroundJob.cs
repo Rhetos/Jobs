@@ -2,6 +2,6 @@
 {
 	public interface IBackgroundJob
 	{
-		void Enqueue(object action, bool executeInUserContext = false, bool optimizeDuplicates = true);
+		void Enqueue(object action, bool executeInUserContext = true, bool optimizeDuplicates = true);
 	}
 }
