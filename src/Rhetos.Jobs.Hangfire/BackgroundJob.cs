@@ -44,7 +44,7 @@ namespace Rhetos.Jobs.Hangfire
 			_logger.Trace($"Job enqueued in Hangfire.|{jobInfo}");
 		}
 
-		public void Enqueue(object action, bool executeInUserContext = true, bool optimizeDuplicates = true)
+		public void EnqueueAction(object action, bool executeInUserContext = true, bool optimizeDuplicates = true)
 		{
 			var job = new Job
 			{

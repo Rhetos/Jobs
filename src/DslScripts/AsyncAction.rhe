@@ -13,12 +13,12 @@
 		var id = Guid.NewGuid();
 		var action = new RhetosJobs.TheJob{ Description = $"TheJob started from Happy action {id}." };
 		repository.RhetosJobs.TheEntity.Insert(new RhetosJobs.TheEntity { Description = action.Description });
-		backgroundJob.Enqueue(action, true);
-		backgroundJob.Enqueue(action);
-		backgroundJob.Enqueue(action);
-		backgroundJob.Enqueue(action);
-		backgroundJob.Enqueue(action);
-		backgroundJob.Enqueue(action);
+		backgroundJob.EnqueueAction(action, true);
+		backgroundJob.EnqueueAction(action);
+		backgroundJob.EnqueueAction(action);
+		backgroundJob.EnqueueAction(action);
+		backgroundJob.EnqueueAction(action);
+		backgroundJob.EnqueueAction(action);
 	}'
 	{
 		RepositoryUses 'backgroundJob' 'Rhetos.Jobs.IBackgroundJob, Rhetos.Jobs';
@@ -29,7 +29,7 @@
 		var id = Guid.NewGuid();
 		var action = new RhetosJobs.TheJob{ Description = $"TheJob started from HappyWithWait action {id}." };
 		repository.RhetosJobs.TheEntity.Insert(new RhetosJobs.TheEntity { Description = action.Description });
-		backgroundJob.Enqueue(action);
+		backgroundJob.EnqueueAction(action);
 		System.Threading.Thread.Sleep(5000);
 		throw new Rhetos.UserException("Ne može");
 	}'
