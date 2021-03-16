@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
   <metadata>
-    <id>Rhetos.Jobs</id>
+    <id>Rhetos.Jobs.Hangfire</id>
     <version>1.0.0-dev</version>
     <authors>Omega software</authors>
     <owners>Omega software</owners>
@@ -22,8 +22,11 @@
     </dependencies>
   </metadata>
   <files>
+    <file src="DslScripts\**\*" target="DslScripts" />
     <file src="Rhetos.Jobs\bin\Debug\Rhetos.Jobs.dll" target="lib\net472" />
     <file src="Rhetos.Jobs\bin\Debug\Rhetos.Jobs.pdb" target="lib\net472" />
+    <file src="Rhetos.Jobs.Hangfire\bin\Debug\Rhetos.Jobs.Hangfire.dll" target="lib\net472" />
+    <file src="Rhetos.Jobs.Hangfire\bin\Debug\Rhetos.Jobs.Hangfire.pdb" target="lib\net472" />
     <file src="..\Readme.md" target="" />
   </files>
 </package>

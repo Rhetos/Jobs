@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.Composition;
 using Autofac;
 
-namespace Rhetos.Jobs
+namespace Rhetos.Jobs.Hangfire
 {
 	[Export(typeof(Module))]
 	public class AutofacConfiguration : Module

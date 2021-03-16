@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Rhetos.Jobs
+﻿namespace Rhetos.Jobs.Hangfire
 {
 	public interface IJobExecuter
 	{

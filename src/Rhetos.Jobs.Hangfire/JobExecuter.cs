@@ -10,7 +10,7 @@ using Rhetos.Logging;
 using Rhetos.Security;
 using Rhetos.Utilities;
 
-namespace Rhetos.Jobs
+namespace Rhetos.Jobs.Hangfire
 {
 	public class JobExecuter : IJobExecuter
 	{

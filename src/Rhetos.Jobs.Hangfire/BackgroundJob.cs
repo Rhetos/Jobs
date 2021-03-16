@@ -6,7 +6,7 @@ using Rhetos.Logging;
 using Rhetos.Persistence;
 using Rhetos.Utilities;
 
-namespace Rhetos.Jobs
+namespace Rhetos.Jobs.Hangfire
 {
 	public class BackgroundJob : IBackgroundJob
 	{
@@ -37,7 +37,7 @@ namespace Rhetos.Jobs
 			job.Id = queuedJob.ID;
 			_taskRepository.Insert(queuedJob);
 
-			Hangfire.BackgroundJob.Enqueue<IJobExecuter>(executer => executer.ExecuteJob(job));
+			global::Hangfire.BackgroundJob.Enqueue<IJobExecuter>(executer => executer.ExecuteJob(job));
 		}
 
 		public void Enqueue(object action, bool executeInUserContext = false, bool optimizeDuplicates = true)

@@ -6,7 +6,7 @@ using Hangfire.SqlServer;
 using Rhetos.Logging;
 using Rhetos.Utilities;
 
-namespace Rhetos.Jobs
+namespace Rhetos.Jobs.Hangfire
 {
 
 	public class RhetosJobsService : IService

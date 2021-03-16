@@ -2,7 +2,7 @@
 {
 	Entity Job
 	{
-		Implements 'Rhetos.Jobs.IQueuedJob, Rhetos.Jobs' { RegisteredImplementation; }	
+		Implements 'Rhetos.Jobs.Hangfire.IQueuedJob, Rhetos.Jobs.Hangfire' { RegisteredImplementation; }	
 	}
 	
 	Entity TheEntity
