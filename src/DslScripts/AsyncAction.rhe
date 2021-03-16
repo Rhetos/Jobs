@@ -1,10 +1,5 @@
 ﻿Module RhetosJobs
 {
-	Entity Job
-	{
-		Implements 'Rhetos.Jobs.Hangfire.IQueuedJob, Rhetos.Jobs.Hangfire' { RegisteredImplementation; }	
-	}
-	
 	Entity TheEntity
 	{
 		Logging { AllProperties; }	
