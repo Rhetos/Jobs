@@ -2,6 +2,6 @@
 {
 	public interface IJobExecuter
 	{
-		void ExecuteJob(IJob job);
+		void ExecuteJob(Job job);
 	}
 }

@@ -2,15 +2,7 @@
 
 namespace Rhetos.Jobs.Hangfire
 {
-	public interface IJob
-	{
-		Guid Id { get; set; }
-		string ActionName { get; set; }
-		string ActionParameters { get; set; }
-		string ExecuteAsUser { get; set; }
-	}
-
-	public struct Job : IJob
+	public struct Job
 	{
 		public Guid Id { get; set; }
 		public string ActionName { get; set; }

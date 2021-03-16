@@ -14,7 +14,7 @@ namespace Rhetos.Jobs.Hangfire
 		private readonly IUserInfo _userInfo;
 		private readonly ILogger _logger;
 
-		private readonly List<IJob> _jobInstances = new List<IJob>();
+		private readonly List<Job> _jobInstances = new List<Job>();
 
 		public BackgroundJob(ILogProvider logProvider, GenericRepository<IQueuedJob> taskRepository, IPersistenceTransaction persistenceTransaction, IUserInfo userInfo)
 		{
@@ -30,7 +30,7 @@ namespace Rhetos.Jobs.Hangfire
 				EnqueueToHangfire(job);
 		}
 
-		private void EnqueueToHangfire(IJob job)
+		private void EnqueueToHangfire(Job job)
 		{
 			job.Id = Guid.NewGuid();
 			var jobInfo = job.LogInfo();

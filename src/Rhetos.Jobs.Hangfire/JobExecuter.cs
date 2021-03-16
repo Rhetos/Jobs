@@ -23,7 +23,7 @@ namespace Rhetos.Jobs.Hangfire
 			_logger = logProvider.GetLogger(InternalExtensions.LoggerName);
 		}
 
-		public void ExecuteJob(IJob job)
+		public void ExecuteJob(Job job)
 		{
 			var jobInfo = job.LogInfo();
 			_logger.Trace($"ExecuteJob started.|{jobInfo}");

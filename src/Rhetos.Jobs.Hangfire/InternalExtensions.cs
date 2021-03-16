@@ -6,7 +6,7 @@ namespace Rhetos.Jobs.Hangfire
 	{
 		public const string LoggerName = "RhetosJobs";
 
-		public static string LogInfo(this IJob job)
+		public static string LogInfo(this Job job)
 		{
 			var jobId = job.Id == Guid.Empty ? "" : $"Jobid: {job.Id}|";
 			var userInfo = string.IsNullOrWhiteSpace(job.ExecuteAsUser) ? "" : $"ExecuteInUserContext: {job.ExecuteAsUser}|";
