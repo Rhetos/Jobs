@@ -44,14 +44,11 @@
 
 	Action TheJob '(parameters, repository, userInfo) => 
 	{
-		var logger = logProvider.GetLogger("RhetosJobs");
-		logger.Write(Rhetos.Logging.EventType.Info, () => parameters.Description);
 		repository.RhetosJobs.ExecutedJob.Insert(new RhetosJobs.ExecutedJob { Description = parameters.Description});
 		repository.RhetosJobs.TheEntity.Insert(new RhetosJobs.TheEntity { Description = parameters.Description });
 	}'
 	{
 		LongString Description;
-		RepositoryUses 'logProvider' 'Rhetos.Logging.ILogProvider, Rhetos.Logging.Interfaces';
 	}
 	
 	Entity ExecutedJob

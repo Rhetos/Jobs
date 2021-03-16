@@ -32,33 +32,44 @@ namespace Rhetos.Jobs.Hangfire
 
 		private void EnqueueToHangfire(IJob job)
 		{
+			job.Id = Guid.NewGuid();
+			var jobInfo = job.LogInfo();
+			_logger.Trace($"Enqueuing job in Hangfire.|{jobInfo}");
+
 			var queuedJob = _taskRepository.CreateInstance();
-			queuedJob.ID = Guid.NewGuid();
-			job.Id = queuedJob.ID;
+			queuedJob.ID = job.Id;
 			_taskRepository.Insert(queuedJob);
 
 			global::Hangfire.BackgroundJob.Enqueue<IJobExecuter>(executer => executer.ExecuteJob(job));
+			_logger.Trace($"Job enqueued in Hangfire.|{jobInfo}");
 		}
 
 		public void Enqueue(object action, bool executeInUserContext = false, bool optimizeDuplicates = true)
 		{
-			var jobInstance = new Job
+			var job = new Job
 			{
 				ActionName = action.GetType().FullName,
 				ActionParameters = JsonConvert.SerializeObject(action)
 			};
 
 			if (executeInUserContext)
-				jobInstance.ExecuteAsUser = _userInfo.UserName;
+				job.ExecuteAsUser = _userInfo.UserName;
+
+			var jobInfo = job.LogInfo();
+			_logger.Trace($"Enqueuing job.|{jobInfo}");
 
 			if (optimizeDuplicates)
 			{
-				var index = _jobInstances.IndexOf(jobInstance);
+				var index = _jobInstances.IndexOf(job);
 				if (index >= 0)
+				{
 					_jobInstances.RemoveAt(index);
+					_logger.Trace($"Previous instance of the same job removed from queue.|{jobInfo}");
+				}
 			}
 
-			_jobInstances.Add(jobInstance);
+			_jobInstances.Add(job);
+			_logger.Trace($"Job enqueued.|{jobInfo}");
 		}
 	}
 }

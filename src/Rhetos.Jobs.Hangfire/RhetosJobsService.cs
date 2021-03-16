@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using Autofac.Integration.Wcf;
 using Hangfire;
 using Hangfire.SqlServer;
-using Rhetos.Logging;
 using Rhetos.Utilities;
 
 namespace Rhetos.Jobs.Hangfire
@@ -12,16 +11,14 @@ namespace Rhetos.Jobs.Hangfire
 	public class RhetosJobsService : IService
 	{
 		private readonly ConnectionString _connectionString;
-		private readonly ILogger _logger;
-		public RhetosJobsService(ILogProvider logProvider, ConnectionString connectionString)
+
+		public RhetosJobsService(ConnectionString connectionString)
 		{
 			_connectionString = connectionString;
-			_logger = logProvider.GetLogger("TheService");
 		}
 
 		public void Initialize()
 		{
-			_logger.Trace("RhetosJobsService initalized");
 		}
 
 		public void InitializeApplicationInstance(System.Web.HttpApplication context)

@@ -45,6 +45,7 @@
     <Compile Include="AutofacConfiguration.cs" />
     <Compile Include="BackgroundJob.cs" />
     <Compile Include="IJobExecuter.cs" />
+    <Compile Include="InternalExtensions.cs" />
     <Compile Include="IQueuedJob.cs" />
     <Compile Include="Job.cs" />
     <Compile Include="JobExecuter.cs" />

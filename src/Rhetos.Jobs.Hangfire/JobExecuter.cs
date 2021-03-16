@@ -25,11 +25,18 @@ namespace Rhetos.Jobs.Hangfire
 
 		public void ExecuteJob(IJob job)
 		{
+			var jobInfo = job.LogInfo();
+			_logger.Trace($"ExecuteJob started.|{jobInfo}");
+
 			if (!JobExists(job.Id, _connectionString))
+			{
+				_logger.Trace($"Job no longer exists in queue. Transaction in which was job created was rollbacked. Terminating execution.|{jobInfo}");
 				return;
+			}
 
 			using (var scope = new ProcessContainer().CreateTransactionScopeContainer(builder => CustomizeScope(builder, job.ExecuteAsUser)))
 			{
+				_logger.Trace($"ExecuteJob TransactionScopeContainer initialized.|{jobInfo}");
 				var actions = scope.Resolve<INamedPlugins<IActionRepository>>();
 				var actionType = scope.Resolve<IDomainObjectModel>().GetType(job.ActionName);
 				var actionRepository = actions.GetPlugin(job.ActionName);
@@ -38,6 +45,8 @@ namespace Rhetos.Jobs.Hangfire
 
 				scope.CommitChanges();
 			}
+			
+			_logger.Trace($"ExecuteJob completed.|{jobInfo}");
 		}
 
 		private static bool JobExists(Guid jobId, string connectionString)
