@@ -8,10 +8,10 @@ REM Updating the build version of all projects.
 PowerShell -ExecutionPolicy ByPass .\Tools\Build\ChangeVersion.ps1 %Version% %Prerelease% || GOTO Error0
 
 WHERE /Q NuGet.exe || ECHO ERROR: Please download the NuGet.exe command line tool. && GOTO Error0
-NuGet restore Rhetos.ElasticSearch.sln -NonInteractive || GOTO Error0
-MSBuild Rhetos.ElasticSearch.sln /target:rebuild /p:Configuration=Debug /verbosity:minimal /fileLogger || GOTO Error0
+NuGet restore Rhetos.Jobs.sln -NonInteractive || GOTO Error0
+MSBuild Rhetos.Jobs.sln /target:rebuild /p:Configuration=Debug /verbosity:minimal /fileLogger || GOTO Error0
 IF NOT EXIST Install md Install
-NuGet pack .\src\Rhetos.ElasticSearch.nuspec -OutputDirectory Install || GOTO Error0
+NuGet pack .\src\Rhetos.Jobs.Hangfire.nuspec -OutputDirectory Install || GOTO Error0
 
 REM Updating the build version back to "dev" (internal development build), to avoid spamming git history with timestamped prerelease versions.
 PowerShell -ExecutionPolicy ByPass .\Tools\Build\ChangeVersion.ps1 %Version% dev || GOTO Error0
