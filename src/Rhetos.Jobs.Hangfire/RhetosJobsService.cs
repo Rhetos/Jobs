@@ -39,7 +39,6 @@ namespace Rhetos.Jobs.Hangfire
 					SlidingInvisibilityTimeout = TimeSpan.FromMinutes(5),
 					QueuePollInterval = TimeSpan.Zero,
 					UseRecommendedIsolationLevel = true,
-					UsePageLocksOnDequeue = true,
 					DisableGlobalLocks = true
 				});
 
