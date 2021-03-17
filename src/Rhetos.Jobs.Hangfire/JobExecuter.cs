@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Data;
-using System.Data.SqlClient;
 using Autofac;
 using Newtonsoft.Json;
 using Rhetos.Dom;
@@ -14,65 +12,78 @@ namespace Rhetos.Jobs.Hangfire
 {
 	public class JobExecuter : IJobExecuter
 	{
-		private readonly ConnectionString _connectionString;
 		private readonly ILogger _logger;
+		private readonly RhetosJobHangfireOptions _options;
 
-		public JobExecuter(ILogProvider logProvider, ConnectionString connectionString)
+		public JobExecuter(ILogProvider logProvider, IConfiguration configuration)
 		{
-			_connectionString = connectionString;
 			_logger = logProvider.GetLogger(InternalExtensions.LoggerName);
+			_options = configuration.GetOptions<RhetosJobHangfireOptions>();
 		}
 
 		public void ExecuteJob(Job job)
 		{
-			var jobInfo = job.LogInfo();
+			var jobInfo = job.GetLogInfo();
 			_logger.Trace($"ExecuteJob started.|{jobInfo}");
 
-			if (!JobExists(job.Id, _connectionString))
-			{
-				_logger.Trace($"Job no longer exists in queue. Transaction in which was job created was rollbacked. Terminating execution.|{jobInfo}");
-				return;
-			}
 
-			using (var scope = new ProcessContainer().CreateTransactionScopeContainer(builder => CustomizeScope(builder, job.ExecuteAsUser)))
+			var scope = ProcessContainer.CreateTransactionScopeContainer(null, builder => CustomizeScope(builder, job.ExecuteAsUser));
+			try
 			{
 				_logger.Trace($"ExecuteJob TransactionScopeContainer initialized.|{jobInfo}");
+
+				var sqlExecuter = scope.Resolve<ISqlExecuter>();
+				if (!JobExists(job.Id, sqlExecuter))
+				{
+					_logger.Trace($"Job no longer exists in queue. Transaction in which was job created was rollbacked. Terminating execution.|{jobInfo}");
+					return;
+				}
+
 				var actions = scope.Resolve<INamedPlugins<IActionRepository>>();
 				var actionType = scope.Resolve<IDomainObjectModel>().GetType(job.ActionName);
 				var actionRepository = actions.GetPlugin(job.ActionName);
 				var parameters = JsonConvert.DeserializeObject(job.ActionParameters, actionType);
 				actionRepository.Execute(parameters);
 
+				DeleteJob(job.Id, sqlExecuter);
 				scope.CommitChanges();
 			}
-			
+			finally
+			{
+				scope.Dispose();
+			}
 			_logger.Trace($"ExecuteJob completed.|{jobInfo}");
 		}
 
-		private static bool JobExists(Guid jobId, string connectionString)
+		private static bool JobExists(Guid jobId, ISqlExecuter sqlExecuter)
 		{
-			using (var connection = new SqlConnection(connectionString))
-			{
-				connection.Open();
-				var command = new SqlCommand($"SELECT * FROM RhetosJobs.Job WITH (READCOMMITTEDLOCK, ROWLOCK) WHERE ID = '{jobId}'", connection);
-				var reader = command.ExecuteReader();
-				var table = new DataTable();
-				table.Load(reader);
+			var command = $"SELECT COUNT(1) FROM RhetosJobs.Job WITH (READCOMMITTEDLOCK, ROWLOCK) WHERE ID = '{jobId}'";
+			var count = 0;
 
-				//If transaction that created job failed there will be no job scheduled and count will be zero
-				return table.Rows.Count > 0;
-			}
+			sqlExecuter.ExecuteReader(command, reader => count = reader.GetInt32(0));
+
+			//If transaction that created job failed there will be no job scheduled and count will be zero
+			return count > 0;
+		}
+
+		private static void DeleteJob(Guid jobId, ISqlExecuter sqlExecuter)
+		{
+			var command = $"DELETE FROM RhetosJobs.Job WITH (NOWAIT) WHERE ID = '{jobId}'";
+			sqlExecuter.ExecuteSql(command);
 		}
 
 		private void CustomizeScope(ContainerBuilder builder, string userName = null)
 		{
-			if (string.IsNullOrWhiteSpace(userName))
-				builder.RegisterType(typeof(ProcessUserInfo)).As<IUserInfo>();
-			else
+
+			if (!string.IsNullOrWhiteSpace(userName))
 				builder.RegisterInstance(new JobExecuterUserInfo(userName)).As<IUserInfo>();
+			else if (!string.IsNullOrWhiteSpace(_options.ProcessUserName))
+				builder.RegisterInstance(new JobExecuterUserInfo(_options.ProcessUserName)).As<IUserInfo>();
+			else
+				builder.RegisterType(typeof(ProcessUserInfo)).As<IUserInfo>();
 		}
 
-		class JobExecuterUserInfo : IUserInfo
+		private class JobExecuterUserInfo : IUserInfo
 		{
 			public JobExecuterUserInfo(string userName)
 			{

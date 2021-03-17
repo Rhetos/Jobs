@@ -11,10 +11,11 @@ namespace Rhetos.Jobs.Hangfire
 	public class RhetosJobsService : IService
 	{
 		private readonly ConnectionString _connectionString;
-
-		public RhetosJobsService(ConnectionString connectionString)
+		private readonly RhetosJobHangfireOptions _options;
+		public RhetosJobsService(ConnectionString connectionString, IConfiguration configuration)
 		{
 			_connectionString = connectionString;
+			_options = configuration.GetOptions<RhetosJobHangfireOptions>();
 		}
 
 		public void Initialize()
@@ -35,11 +36,11 @@ namespace Rhetos.Jobs.Hangfire
 				.UseRecommendedSerializerSettings()
 				.UseSqlServerStorage(_connectionString, new SqlServerStorageOptions
 				{
-					CommandBatchMaxTimeout = TimeSpan.FromMinutes(5),
-					SlidingInvisibilityTimeout = TimeSpan.FromMinutes(5),
-					QueuePollInterval = TimeSpan.Zero,
-					UseRecommendedIsolationLevel = true,
-					DisableGlobalLocks = true
+					CommandBatchMaxTimeout = TimeSpan.FromSeconds(_options.CommandBatchMaxTimeout),
+					SlidingInvisibilityTimeout = TimeSpan.FromSeconds(_options.SlidingInvisibilityTimeout),
+					QueuePollInterval = TimeSpan.FromSeconds(_options.QueuePollInterval),
+					UseRecommendedIsolationLevel = _options.UseRecommendedIsolationLevel,
+					DisableGlobalLocks = _options.DisableGlobalLocks
 				});
 
 			yield return new BackgroundJobServer();
