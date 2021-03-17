@@ -15,27 +15,24 @@ namespace Rhetos.Jobs.Hangfire
 		private readonly ILogger _logger;
 		private readonly RhetosJobHangfireOptions _options;
 
-		public JobExecuter(ILogProvider logProvider, IConfiguration configuration)
+		public JobExecuter(ILogProvider logProvider, RhetosJobHangfireOptions options)
 		{
 			_logger = logProvider.GetLogger(InternalExtensions.LoggerName);
-			_options = configuration.GetOptions<RhetosJobHangfireOptions>();
+			_options = options;
 		}
 
 		public void ExecuteJob(Job job)
 		{
-			var jobInfo = job.GetLogInfo();
-			_logger.Trace($"ExecuteJob started.|{jobInfo}");
+			_logger.Trace(() => $"ExecuteJob started.|{job.GetLogInfo()}");
 
-
-			var scope = ProcessContainer.CreateTransactionScopeContainer(null, builder => CustomizeScope(builder, job.ExecuteAsUser));
-			try
+			using (var scope = ProcessContainer.CreateTransactionScopeContainer(null, builder => CustomizeScope(builder, job.ExecuteAsUser)))
 			{
-				_logger.Trace($"ExecuteJob TransactionScopeContainer initialized.|{jobInfo}");
+				_logger.Trace(() => $"ExecuteJob TransactionScopeContainer initialized.|{job.GetLogInfo()}");
 
 				var sqlExecuter = scope.Resolve<ISqlExecuter>();
 				if (!JobExists(job.Id, sqlExecuter))
 				{
-					_logger.Trace($"Job no longer exists in queue. Transaction in which was job created was rollbacked. Terminating execution.|{jobInfo}");
+					_logger.Trace(() => $"Job no longer exists in queue. Transaction in which was job created was rollbacked. Terminating execution.|{job.GetLogInfo()}");
 					return;
 				}
 
@@ -48,16 +45,12 @@ namespace Rhetos.Jobs.Hangfire
 				DeleteJob(job.Id, sqlExecuter);
 				scope.CommitChanges();
 			}
-			finally
-			{
-				scope.Dispose();
-			}
-			_logger.Trace($"ExecuteJob completed.|{jobInfo}");
+			_logger.Trace(() => $"ExecuteJob completed.|{job.GetLogInfo()}");
 		}
 
 		private static bool JobExists(Guid jobId, ISqlExecuter sqlExecuter)
 		{
-			var command = $"SELECT COUNT(1) FROM RhetosJobs.Job WITH (READCOMMITTEDLOCK, ROWLOCK) WHERE ID = '{jobId}'";
+			var command = $"SELECT COUNT(1) FROM RhetosJobs.HangfireJob WITH (READCOMMITTEDLOCK, ROWLOCK) WHERE ID = '{jobId}'";
 			var count = 0;
 
 			sqlExecuter.ExecuteReader(command, reader => count = reader.GetInt32(0));
@@ -68,13 +61,12 @@ namespace Rhetos.Jobs.Hangfire
 
 		private static void DeleteJob(Guid jobId, ISqlExecuter sqlExecuter)
 		{
-			var command = $"DELETE FROM RhetosJobs.Job WITH (NOWAIT) WHERE ID = '{jobId}'";
+			var command = $"DELETE FROM RhetosJobs.HangfireJob WHERE ID = '{jobId}'";
 			sqlExecuter.ExecuteSql(command);
 		}
 
 		private void CustomizeScope(ContainerBuilder builder, string userName = null)
 		{
-
 			if (!string.IsNullOrWhiteSpace(userName))
 				builder.RegisterInstance(new JobExecuterUserInfo(userName)).As<IUserInfo>();
 			else if (!string.IsNullOrWhiteSpace(_options.ProcessUserName))

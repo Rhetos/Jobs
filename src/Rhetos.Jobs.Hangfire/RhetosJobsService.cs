@@ -7,15 +7,14 @@ using Rhetos.Utilities;
 
 namespace Rhetos.Jobs.Hangfire
 {
-
 	public class RhetosJobsService : IService
 	{
 		private readonly ConnectionString _connectionString;
 		private readonly RhetosJobHangfireOptions _options;
-		public RhetosJobsService(ConnectionString connectionString, IConfiguration configuration)
+		public RhetosJobsService(ConnectionString connectionString, RhetosJobHangfireOptions options)
 		{
 			_connectionString = connectionString;
-			_options = configuration.GetOptions<RhetosJobHangfireOptions>();
+			_options = options;
 		}
 
 		public void Initialize()

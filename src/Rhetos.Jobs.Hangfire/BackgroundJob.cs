@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using Newtonsoft.Json;
-using Rhetos.Dom.DefaultConcepts;
 using Rhetos.Logging;
 using Rhetos.Persistence;
 using Rhetos.Utilities;
@@ -11,16 +10,16 @@ namespace Rhetos.Jobs.Hangfire
 {
 	public class BackgroundJob : IBackgroundJob
 	{
-		private readonly GenericRepository<IQueuedJob> _taskRepository;
+		private readonly ISqlExecuter _sqlExecuter;
 		private readonly IUserInfo _userInfo;
 		private readonly ILogger _logger;
 		private readonly ILogger _performanceLogger;
 
 		private readonly List<Job> _jobInstances = new List<Job>();
 
-		public BackgroundJob(ILogProvider logProvider, GenericRepository<IQueuedJob> taskRepository, IPersistenceTransaction persistenceTransaction, IUserInfo userInfo)
+		public BackgroundJob(ILogProvider logProvider, IPersistenceTransaction persistenceTransaction, ISqlExecuter sqlExecuter, IUserInfo userInfo)
 		{
-			_taskRepository = taskRepository;
+			_sqlExecuter = sqlExecuter;
 			_userInfo = userInfo;
 			_logger = logProvider.GetLogger(InternalExtensions.LoggerName);
 			_performanceLogger = logProvider.GetLogger($"Performance.{InternalExtensions.LoggerName}");
@@ -29,8 +28,7 @@ namespace Rhetos.Jobs.Hangfire
 
 		private void PersistenceTransactionOnBeforeClose()
 		{
-			var stopWatch = new Stopwatch();
-			stopWatch.Start();
+			var stopWatch = Stopwatch.StartNew();
 
 			foreach (var job in _jobInstances) 
 				EnqueueToHangfire(job);
@@ -40,22 +38,21 @@ namespace Rhetos.Jobs.Hangfire
 
 		private void EnqueueToHangfire(Job job)
 		{
-			job.Id = Guid.NewGuid();
-			var jobInfo = job.GetLogInfo();
-			_logger.Trace($"Enqueuing job in Hangfire.|{jobInfo}");
+			_logger.Trace(()=> $"Enqueuing job in Hangfire.|{job.GetLogInfo()}");
 
-			var queuedJob = _taskRepository.CreateInstance();
-			queuedJob.ID = job.Id;
-			_taskRepository.Insert(queuedJob);
+			var commmand = $@"INSERT INTO RhetosJobs.HangfireJob (ID) VALUES('{job.Id}')";
+
+			_sqlExecuter.ExecuteSql(commmand);
 
 			global::Hangfire.BackgroundJob.Enqueue<IJobExecuter>(executer => executer.ExecuteJob(job));
-			_logger.Trace($"Job enqueued in Hangfire.|{jobInfo}");
+			_logger.Trace(() => $"Job enqueued in Hangfire.|{job.GetLogInfo()}");
 		}
 
 		public void EnqueueAction(object action, bool executeInUserContext, bool optimizeDuplicates)
 		{
 			var job = new Job
 			{
+				Id = Guid.NewGuid(),
 				ActionName = action.GetType().FullName,
 				ActionParameters = JsonConvert.SerializeObject(action)
 			};
@@ -63,8 +60,7 @@ namespace Rhetos.Jobs.Hangfire
 			if (executeInUserContext)
 				job.ExecuteAsUser = _userInfo.UserName;
 
-			var jobInfo = job.GetLogInfo();
-			_logger.Trace($"Enqueuing job.|{jobInfo}");
+			_logger.Trace(() => $"Enqueuing job.|{job.GetLogInfo()}");
 
 			if (optimizeDuplicates)
 			{
@@ -72,13 +68,13 @@ namespace Rhetos.Jobs.Hangfire
 				while (index >= 0)
 				{
 					_jobInstances.RemoveAt(index);
-					_logger.Trace($"Previous instance of the same job removed from queue.|{jobInfo}");
+					_logger.Trace(() => $"Previous instance of the same job removed from queue.|{job.GetLogInfo()}");
 					index = _jobInstances.IndexOf(job);
 				}
 			}
 
 			_jobInstances.Add(job);
-			_logger.Trace($"Job enqueued.|{jobInfo}");
+			_logger.Trace(() => $"Job enqueued.|{job.GetLogInfo()}");
 		}
 	}
 }

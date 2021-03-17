@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.Composition;
 using Autofac;
+using Rhetos.Utilities;
 
 namespace Rhetos.Jobs.Hangfire
 {
@@ -8,6 +9,7 @@ namespace Rhetos.Jobs.Hangfire
 	{
 		protected override void Load(ContainerBuilder builder)
 		{
+			builder.Register(context => context.Resolve<IConfiguration>().GetOptions<RhetosJobHangfireOptions>()).SingleInstance();
 			builder.RegisterType<RhetosJobsService>().As<IService>();
 			builder.RegisterType<BackgroundJob>().As<IBackgroundJob>().InstancePerLifetimeScope();
 			builder.RegisterType<JobExecuter>().As<IJobExecuter>().InstancePerLifetimeScope();

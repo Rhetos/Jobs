@@ -46,12 +46,11 @@
     <Compile Include="BackgroundJob.cs" />
     <Compile Include="IJobExecuter.cs" />
     <Compile Include="InternalExtensions.cs" />
-    <Compile Include="IQueuedJob.cs" />
     <Compile Include="Job.cs" />
     <Compile Include="JobExecuter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RhetosJobsService.cs" />
-    <Compile Include="RhetosJobsOptions.cs" />
+    <Compile Include="RhetosJobHangfireOptions.cs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Hangfire">
