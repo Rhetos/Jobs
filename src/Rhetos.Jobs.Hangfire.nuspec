@@ -14,17 +14,17 @@
     <dependencies>
       <dependency id="Rhetos" version="4.2.0" />
       <dependency id="Rhetos.CommonConcepts" version="4.2.0" />
+      <dependency id="Rhetos.Jobs.Abstractions" version="1.0.0-dev" />
       <dependency id="Hangfire" version="1.7.19" />
       <dependency id="Hangfire.AspNet" version="0.2.0" />
       <dependency id="HangFire.Autofac" version="2.3.1" />
     </dependencies>
   </metadata>
   <files>
+    <file src="..\Readme.md" target="" />
     <file src="DslScripts\**\*" target="DslScripts" />
-    <file src="Rhetos.Jobs\bin\Debug\Rhetos.Jobs.dll" target="lib\net472" />
-    <file src="Rhetos.Jobs\bin\Debug\Rhetos.Jobs.pdb" target="lib\net472" />
     <file src="Rhetos.Jobs.Hangfire\bin\Debug\Rhetos.Jobs.Hangfire.dll" target="lib\net472" />
     <file src="Rhetos.Jobs.Hangfire\bin\Debug\Rhetos.Jobs.Hangfire.pdb" target="lib\net472" />
-    <file src="..\Readme.md" target="" />
+    <file src="Rhetos.Jobs.Hangfire\bin\Debug\Rhetos.Jobs.Hangfire.xml" target="lib\net472" />
   </files>
 </package>

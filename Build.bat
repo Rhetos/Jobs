@@ -11,7 +11,7 @@ WHERE /Q NuGet.exe || ECHO ERROR: Please download the NuGet.exe command line too
 NuGet restore Rhetos.Jobs.sln -NonInteractive || GOTO Error0
 MSBuild Rhetos.Jobs.sln /target:rebuild /p:Configuration=Debug /verbosity:minimal /fileLogger || GOTO Error0
 IF NOT EXIST Install md Install
-NuGet pack .\src\Rhetos.Jobs.nuspec -OutputDirectory Install || GOTO Error0
+NuGet pack .\src\Rhetos.Jobs.Abstractions.nuspec -OutputDirectory Install || GOTO Error0
 NuGet pack .\src\Rhetos.Jobs.Hangfire.nuspec -OutputDirectory Install || GOTO Error0
 
 REM Updating the build version back to "dev" (internal development build), to avoid spamming git history with timestamped prerelease versions.

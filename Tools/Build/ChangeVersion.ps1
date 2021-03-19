@@ -29,3 +29,4 @@ Write-Output "Setting version '$fullVersion'."
 RegexReplace '*AssemblyInfo.cs' '([\n^]\[assembly: Assembly(File)?Version(Attribute)?\(\").*(\"\)\])' ('${1}'+$version+'${4}')
 RegexReplace '*AssemblyInfo.cs' '([\n^]\[assembly: AssemblyInformationalVersion(Attribute)?\(\").*(\"\)\])' ('${1}'+$fullVersion+'${3}')
 RegexReplace '*.nuspec' '([\n^]\s*\<version\>).*(\<\/version\>\s*)' ('${1}'+$fullVersion+'${2}')
+RegexReplace 'Rhetos.Jobs.Hangfire.nuspec' '(Rhetos.Jobs.Abstractions\" version=\").*(\")' ('${1}'+$fullVersion+'${2}')
