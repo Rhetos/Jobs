@@ -12,12 +12,12 @@
 		public string ProcessUserName { get; set; }
 
 		/// <summary>
-		/// Value is in seconds. Default value is 500. For usage of the option see Hangfire documentation.
+		/// Value is in seconds. Default value is 300. For usage of the option see Hangfire documentation.
 		/// </summary>
 		public int CommandBatchMaxTimeout { get; set; } = 300;
 
 		/// <summary>
-		/// Value is in seconds. Default value is 500. For usage of the option see Hangfire documentation.
+		/// Value is in seconds. Default value is 300. For usage of the option see Hangfire documentation.
 		/// </summary>
 		public int SlidingInvisibilityTimeout { get; set; } = 300;
 
