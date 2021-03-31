@@ -19,12 +19,12 @@ namespace Rhetos.Jobs.Hangfire
 
 		public void Initialize()
 		{
+			GlobalConfiguration.Configuration.UseAutofacActivator(AutofacHostFactory.Container);
+			HangfireAspNet.Use(GetHangfireServers);
 		}
 
 		public void InitializeApplicationInstance(System.Web.HttpApplication context)
 		{
-			GlobalConfiguration.Configuration.UseAutofacActivator(AutofacHostFactory.Container);
-			HangfireAspNet.Use(GetHangfireServers);
 		}
 
 		private IEnumerable<IDisposable> GetHangfireServers()

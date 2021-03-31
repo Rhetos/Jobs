@@ -1,5 +1,6 @@
 ﻿using System;
 using Autofac;
+using Autofac.Integration.Wcf;
 using Newtonsoft.Json;
 using Rhetos.Dom;
 using Rhetos.Dom.DefaultConcepts;
@@ -17,6 +18,7 @@ namespace Rhetos.Jobs.Hangfire
 
 		public JobExecuter(ILogProvider logProvider, RhetosJobHangfireOptions options)
 		{
+			// Note: Constructor parameters are resolved from the root DI container (set in UseAutofacActivator call in RhetosJobsService class).
 			_logger = logProvider.GetLogger(InternalExtensions.LoggerName);
 			_options = options;
 		}
@@ -24,17 +26,19 @@ namespace Rhetos.Jobs.Hangfire
 		public void ExecuteJob(Job job)
 		{
 			_logger.Trace(() => $"ExecuteJob started.|{job.GetLogInfo()}");
-
+			
 			try
 			{
-				using (var scope = ProcessContainer.CreateTransactionScopeContainer(null, builder => CustomizeScope(builder, job.ExecuteAsUser)))
+				using (var scope = new TransactionScopeContainer((IContainer) AutofacHostFactory.Container,
+					builder => CustomizeScope(builder, job.ExecuteAsUser)))
 				{
 					_logger.Trace(() => $"ExecuteJob TransactionScopeContainer initialized.|{job.GetLogInfo()}");
 
 					var sqlExecuter = scope.Resolve<ISqlExecuter>();
 					if (!JobExists(job.Id, sqlExecuter))
 					{
-						_logger.Trace(() => $"Job no longer exists in queue. Transaction in which was job created was rollbacked. Terminating execution.|{job.GetLogInfo()}");
+						_logger.Trace(() =>
+							$"Job no longer exists in queue. Transaction in which was job created was rollbacked. Terminating execution.|{job.GetLogInfo()}");
 						return;
 					}
 
@@ -53,6 +57,7 @@ namespace Rhetos.Jobs.Hangfire
 				_logger.Error($"ExecuteJob exception: {exception}");
 				throw;
 			}
+
 			_logger.Trace(() => $"ExecuteJob completed.|{job.GetLogInfo()}");
 		}
 

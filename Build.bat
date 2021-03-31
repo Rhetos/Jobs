@@ -10,7 +10,9 @@ PowerShell -ExecutionPolicy ByPass .\Tools\Build\ChangeVersion.ps1 %Version% %Pr
 WHERE /Q NuGet.exe || ECHO ERROR: Please download the NuGet.exe command line tool. && GOTO Error0
 NuGet restore Rhetos.Jobs.sln -NonInteractive || GOTO Error0
 MSBuild Rhetos.Jobs.sln /target:rebuild /p:Configuration=Debug /verbosity:minimal /fileLogger || GOTO Error0
-IF NOT EXIST Install md Install
+
+IF NOT EXIST Install MD Install
+DEL /F /S /Q Install\* || GOTO Error0
 NuGet pack .\src\Rhetos.Jobs.Abstractions.nuspec -OutputDirectory Install || GOTO Error0
 NuGet pack .\src\Rhetos.Jobs.Hangfire.nuspec -OutputDirectory Install || GOTO Error0
 
@@ -24,6 +26,7 @@ PowerShell -ExecutionPolicy ByPass .\Tools\Build\ChangeVersion.ps1 %Version% dev
 @EXIT /B 0
 
 :Error0
+@PowerShell -ExecutionPolicy ByPass .\Tools\Build\ChangeVersion.ps1 %Version% dev >nul
 @ECHO.
 @ECHO %~nx0 FAILED.
 @IF /I [%1] NEQ [/NOPAUSE] @PAUSE
