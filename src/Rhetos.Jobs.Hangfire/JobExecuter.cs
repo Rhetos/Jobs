@@ -25,25 +25,33 @@ namespace Rhetos.Jobs.Hangfire
 		{
 			_logger.Trace(() => $"ExecuteJob started.|{job.GetLogInfo()}");
 
-			using (var scope = ProcessContainer.CreateTransactionScopeContainer(null, builder => CustomizeScope(builder, job.ExecuteAsUser)))
+			try
 			{
-				_logger.Trace(() => $"ExecuteJob TransactionScopeContainer initialized.|{job.GetLogInfo()}");
-
-				var sqlExecuter = scope.Resolve<ISqlExecuter>();
-				if (!JobExists(job.Id, sqlExecuter))
+				using (var scope = ProcessContainer.CreateTransactionScopeContainer(null, builder => CustomizeScope(builder, job.ExecuteAsUser)))
 				{
-					_logger.Trace(() => $"Job no longer exists in queue. Transaction in which was job created was rollbacked. Terminating execution.|{job.GetLogInfo()}");
-					return;
+					_logger.Trace(() => $"ExecuteJob TransactionScopeContainer initialized.|{job.GetLogInfo()}");
+
+					var sqlExecuter = scope.Resolve<ISqlExecuter>();
+					if (!JobExists(job.Id, sqlExecuter))
+					{
+						_logger.Trace(() => $"Job no longer exists in queue. Transaction in which was job created was rollbacked. Terminating execution.|{job.GetLogInfo()}");
+						return;
+					}
+
+					var actions = scope.Resolve<INamedPlugins<IActionRepository>>();
+					var actionType = scope.Resolve<IDomainObjectModel>().GetType(job.ActionName);
+					var actionRepository = actions.GetPlugin(job.ActionName);
+					var parameters = JsonConvert.DeserializeObject(job.ActionParameters, actionType);
+					actionRepository.Execute(parameters);
+
+					DeleteJob(job.Id, sqlExecuter);
+					scope.CommitChanges();
 				}
-
-				var actions = scope.Resolve<INamedPlugins<IActionRepository>>();
-				var actionType = scope.Resolve<IDomainObjectModel>().GetType(job.ActionName);
-				var actionRepository = actions.GetPlugin(job.ActionName);
-				var parameters = JsonConvert.DeserializeObject(job.ActionParameters, actionType);
-				actionRepository.Execute(parameters);
-
-				DeleteJob(job.Id, sqlExecuter);
-				scope.CommitChanges();
+			}
+			catch (Exception exception)
+			{
+				_logger.Error($"ExecuteJob exception: {exception}");
+				throw;
 			}
 			_logger.Trace(() => $"ExecuteJob completed.|{job.GetLogInfo()}");
 		}
