@@ -13,12 +13,12 @@
 		var id = Guid.NewGuid();
 		var action = new RhetosJobs.TheJob{ Description = $"TheJob started from Happy action {id}." };
 		repository.RhetosJobs.TheEntity.Insert(new RhetosJobs.TheEntity { Description = action.Description });
-		backgroundJob.EnqueueAction(action, true, true);
-		backgroundJob.EnqueueAction(action, false, true);
-		backgroundJob.EnqueueAction(action, false, true);
-		backgroundJob.EnqueueAction(action, false, true);
-		backgroundJob.EnqueueAction(action, false, true);
-		backgroundJob.EnqueueAction(action, false, true);
+		Rhetos.Jobs.BackgroundJobExtensions.EnqueueAction(backgroundJob, action, true, true);
+		Rhetos.Jobs.BackgroundJobExtensions.EnqueueAction(backgroundJob, action, false, true);
+		Rhetos.Jobs.BackgroundJobExtensions.EnqueueAction(backgroundJob, action, false, true);
+		Rhetos.Jobs.BackgroundJobExtensions.EnqueueAction(backgroundJob, action, false, true);
+		Rhetos.Jobs.BackgroundJobExtensions.EnqueueAction(backgroundJob, action, false, true);
+		Rhetos.Jobs.BackgroundJobExtensions.EnqueueAction(backgroundJob, action, false, true);
 	}'
 	{
 		RepositoryUses 'backgroundJob' 'Rhetos.Jobs.IBackgroundJob, Rhetos.Jobs.Abstractions';
@@ -29,7 +29,7 @@
 		var id = Guid.NewGuid();
 		var action = new RhetosJobs.TheJob{ Description = $"TheJob started from HappyWithWait action {id}." };
 		repository.RhetosJobs.TheEntity.Insert(new RhetosJobs.TheEntity { Description = action.Description });
-		backgroundJob.EnqueueAction(action, false, true);
+		Rhetos.Jobs.BackgroundJobExtensions.EnqueueAction(backgroundJob, action, false, true);
 		System.Threading.Thread.Sleep(20000);
 		// throw new Rhetos.UserException("Ne može");
 	}'
