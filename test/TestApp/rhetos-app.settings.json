@@ -1,0 +1,15 @@
+{
+  "Rhetos": {
+    "App": {
+      "RhetosRuntimePath": "bin\\TestApp.dll",
+      "AssetsFolder": "bin\\RhetosAssets",
+      "DatabaseLanguage": "MsSql"
+    },
+    "LegacyPaths": {
+      "ResourcesFolder": "Resources"
+    },
+    "AppSecurity": {
+      "AllClaimsForAnonymous": true
+    }
+  }
+}

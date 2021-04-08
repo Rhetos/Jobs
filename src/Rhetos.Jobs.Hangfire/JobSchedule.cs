@@ -5,7 +5,7 @@ namespace Rhetos.Jobs.Hangfire
     /// <summary>
     /// Extended information on job, for job management before it is executed.
     /// </summary>
-    public class JobScheduling
+    public class JobSchedule
 	{
 		public Job Job { get; set; }
 		public Type ExecuterType { get; set; }

@@ -49,7 +49,7 @@
     <Compile Include="InternalExtensions.cs" />
     <Compile Include="Job.cs" />
     <Compile Include="JobExecuter.cs" />
-    <Compile Include="JobScheduling.cs" />
+    <Compile Include="JobSchedule.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RhetosJobsService.cs" />
     <Compile Include="RhetosJobHangfireOptions.cs" />
@@ -79,6 +79,9 @@
       <Project>{8979d9c0-a6aa-4806-8c00-43cc687a94d1}</Project>
       <Name>Rhetos.Jobs.Abstractions</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="DslScripts\Hangfire.rhe" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

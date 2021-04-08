@@ -9,7 +9,7 @@ PowerShell -ExecutionPolicy ByPass .\Tools\Build\ChangeVersion.ps1 %Version% %Pr
 
 WHERE /Q NuGet.exe || ECHO ERROR: Please download the NuGet.exe command line tool. && GOTO Error0
 NuGet restore Rhetos.Jobs.sln -NonInteractive || GOTO Error0
-MSBuild Rhetos.Jobs.sln /target:rebuild /p:Configuration=Debug /verbosity:minimal /fileLogger || GOTO Error0
+MSBuild Rhetos.Jobs.sln /target:rebuild /p:Configuration=Debug /p:RhetosDeploy=false /verbosity:minimal /fileLogger || GOTO Error0
 
 IF NOT EXIST Install MD Install
 DEL /F /S /Q Install\* || GOTO Error0

@@ -7,6 +7,8 @@ Contents:
 
 1. [Installation and configuration](#installation-and-configuration)
 2. [Usage](#usage)
+3. [Troubleshooting](#troubleshooting)
+   1. [ThreadAbortException](#threadabortexception)
 
 See [rhetos.org](http://www.rhetos.org/) for more information on Rhetos.
 
@@ -27,7 +29,7 @@ Configuration of the plugin is done in `rhetos-app.settings.json`, like this (al
   "Rhetos": {
     "Jobs": {
       "Hangfire": {
-        "ProcessUserName": "hangfire-user", //UserName under which enqueued actions will be executed if action is not enqueued with executeInUserContext=true. If ommited then UserName of the account of the app pool user will be used.
+        "ProcessUserName": "hangfire-user", //UserName under which enqueued actions will be executed if action is not enqueued with executeInUserContext=true. If omitted then UserName of the account of the app pool user will be used.
         "CommandBatchMaxTimeout": 300, //Value is in seconds. Default value is 300. For usage of the option see Hangfire documentation.
         "SlidingInvisibilityTimeout": 300, //Value is in seconds. Default value is 300. For usage of the option see Hangfire documentation.
         "QueuePollInterval": 0, //Value is in seconds. Default value is 0. For usage of the option see Hangfire documentation.
@@ -39,6 +41,10 @@ Configuration of the plugin is done in `rhetos-app.settings.json`, like this (al
 }
 ```
 
+For applications with Global.asax (Rhetos v4), suppress the OWIN startup issue by adding
+`<add key="owin:AutomaticAppStartup" value="false"/>` inside `appSettings` element in *Web.config* file.
+See Hangfire documentation for more info in this issue: [Using Global.asax.cs file](https://docs.hangfire.io/en/latest/getting-started/aspnet-applications.html#using-global-asax-cs-file).
+
 ## Usage
 
 In order to enqueue asynchronous execution of an action you have to:
@@ -47,7 +53,7 @@ In order to enqueue asynchronous execution of an action you have to:
 * Create action parameters of an action you wish to enqueue for asynchronous execution.
 * Call `EnqueueAction` method of `IBackgroundJob` object. Method parameters are:
   * object action - Action which should be executed.
-  * bool executeInUserContext - If true Action will be executed in context of the user which started the transaction in which Action was enqueud. Otherwise it will be executed in context of service account.
+  * bool executeInUserContext - If true Action will be executed in context of the user which started the transaction in which Action was enqueued. Otherwise it will be executed in context of service account.
   * bool optimizeDuplicates - If true previous same Actions (same Action with same parameters) will be removed from queue.
 
 Here is an example:
@@ -81,4 +87,13 @@ Module Test
 }
 ```
 
-Enqueued actions will be executed asynchronously, immediately after the transaction in which they were enqueud is closed. If the transaction is rollbacked for any number of reasons, actions will not be enqueud and therefore not executed.
+Enqueued actions will be executed asynchronously, immediately after the transaction in which they were enqueued is closed. If the transaction is rolled back for any number of reasons, actions will not be enqueued and therefore not executed.
+
+## Troubleshooting
+
+### ThreadAbortException
+
+*ThreadAbortException* can occur on application shutdown if there are some Hangfire background jobs still running.
+Review the Hangfire documentation:
+For console apps and Windows services, make sure to [Dispose BackgroundJobServer](https://docs.hangfire.io/en/latest/background-processing/processing-background-jobs.html) before exiting the application.
+For web applications, reduce the issue with [Making ASP.NET application always running](https://docs.hangfire.io/en/latest/deployment-to-production/making-aspnet-app-always-running.html).

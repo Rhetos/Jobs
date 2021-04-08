@@ -1,4 +1,0 @@
-﻿Module RhetosJobs
-{
-	Entity HangfireJob;
-}

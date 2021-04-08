@@ -14,7 +14,7 @@ namespace Rhetos.Jobs.Hangfire
 		private readonly ILogger _logger;
 		private readonly ILogger _performanceLogger;
 
-		private readonly List<JobScheduling> _jobInstances = new List<JobScheduling>();
+		private readonly List<JobSchedule> _jobInstances = new List<JobSchedule>();
 
 		public BackgroundJob(ILogProvider logProvider, IPersistenceTransaction persistenceTransaction, ISqlExecuter sqlExecuter, IUserInfo userInfo)
 		{
@@ -35,7 +35,7 @@ namespace Rhetos.Jobs.Hangfire
 			_performanceLogger.Write(stopWatch, "Enqueue all jobs to Hangfire.");
 		}
 
-		private void EnqueueToHangfire(JobScheduling job)
+		private void EnqueueToHangfire(JobSchedule job)
 		{
 			_logger.Trace(()=> $"Enqueuing job in Hangfire.|{job.GetLogInfo()}");
 
@@ -50,7 +50,7 @@ namespace Rhetos.Jobs.Hangfire
         public void AddJob<TExecuter, TParameter>(TParameter parameter, bool executeInUserContext, object aggregationGroup, JobAggregator<TParameter> jobAggregator)
 			where TExecuter : IJobExecuter<TParameter>
         {
-			var job = new JobScheduling
+			var job = new JobSchedule
 			{
 				Job = new Job
 				{
