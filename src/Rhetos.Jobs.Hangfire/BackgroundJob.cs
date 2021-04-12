@@ -11,16 +11,23 @@ namespace Rhetos.Jobs.Hangfire
 	{
 		private readonly ISqlExecuter _sqlExecuter;
 		private readonly IUserInfo _userInfo;
-		private readonly ILogger _logger;
+        private readonly RhetosHangfireInitialization _hangfireInitialization;
+        private readonly ILogger _logger;
 		private readonly ILogger _performanceLogger;
 
 		private readonly List<JobSchedule> _jobInstances = new List<JobSchedule>();
 
-		public BackgroundJob(ILogProvider logProvider, IPersistenceTransaction persistenceTransaction, ISqlExecuter sqlExecuter, IUserInfo userInfo)
+		public BackgroundJob(
+			ILogProvider logProvider,
+			IPersistenceTransaction persistenceTransaction,
+			ISqlExecuter sqlExecuter,
+			IUserInfo userInfo,
+			RhetosHangfireInitialization hangfireInitialization)
 		{
 			_sqlExecuter = sqlExecuter;
 			_userInfo = userInfo;
-			_logger = logProvider.GetLogger(InternalExtensions.LoggerName);
+            _hangfireInitialization = hangfireInitialization;
+            _logger = logProvider.GetLogger(InternalExtensions.LoggerName);
 			_performanceLogger = logProvider.GetLogger($"Performance.{InternalExtensions.LoggerName}");
 			persistenceTransaction.BeforeClose += PersistenceTransactionOnBeforeClose;
 		}
@@ -50,6 +57,8 @@ namespace Rhetos.Jobs.Hangfire
         public void AddJob<TExecuter, TParameter>(TParameter parameter, bool executeInUserContext, object aggregationGroup, JobAggregator<TParameter> jobAggregator)
 			where TExecuter : IJobExecuter<TParameter>
         {
+			_hangfireInitialization.InitializeGlobalConfiguration();
+
 			var job = new JobSchedule
 			{
 				Job = new Job

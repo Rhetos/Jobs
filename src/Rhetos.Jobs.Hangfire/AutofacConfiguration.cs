@@ -10,9 +10,11 @@ namespace Rhetos.Jobs.Hangfire
 		protected override void Load(ContainerBuilder builder)
 		{
 			builder.Register(context => context.Resolve<IConfiguration>().GetOptions<RhetosJobHangfireOptions>()).SingleInstance();
-			builder.RegisterType<RhetosJobsService>().As<IService>();
+			builder.RegisterType<RhetosJobsService>().As<RhetosJobsService>().As<IService>().SingleInstance();
 			builder.RegisterType<BackgroundJob>().As<IBackgroundJob>().InstancePerLifetimeScope();
 			builder.RegisterGeneric(typeof(JobExecuter<,>)).InstancePerLifetimeScope();
+			builder.RegisterType<RhetosHangfireInitialization>().SingleInstance();
+
 			base.Load(builder);
 		}
 	}

@@ -51,6 +51,7 @@
     <Compile Include="JobExecuter.cs" />
     <Compile Include="JobSchedule.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RhetosHangfireInitialization.cs" />
     <Compile Include="RhetosJobsService.cs" />
     <Compile Include="RhetosJobHangfireOptions.cs" />
   </ItemGroup>

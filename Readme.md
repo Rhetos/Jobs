@@ -7,7 +7,8 @@ Contents:
 
 1. [Installation and configuration](#installation-and-configuration)
 2. [Usage](#usage)
-3. [Troubleshooting](#troubleshooting)
+3. [Running job server in unit tests and CLI utilities](#running-job-server-in-unit-tests-and-cli-utilities)
+4. [Troubleshooting](#troubleshooting)
    1. [ThreadAbortException](#threadabortexception)
 
 See [rhetos.org](http://www.rhetos.org/) for more information on Rhetos.
@@ -35,8 +36,8 @@ Configuration of the plugin is done in `rhetos-app.settings.json`, like this (al
         "QueuePollInterval": 0, //Value is in seconds. Default value is 0. For usage of the option see Hangfire documentation.
         "UseRecommendedIsolationLevel": true, //Default value is true. For usage of the option see Hangfire documentation.
         "DisableGlobalLocks": true //Default value is true. For usage of the option see Hangfire documentation.
-	  }
-	}
+      }
+    }
   }
 }
 ```
@@ -58,7 +59,7 @@ In order to enqueue asynchronous execution of an action you have to:
 
 Here is an example:
 
-```cs
+```c
 Module Test
 {
   Entity TheEntity
@@ -88,6 +89,30 @@ Module Test
 ```
 
 Enqueued actions will be executed asynchronously, immediately after the transaction in which they were enqueued is closed. If the transaction is rolled back for any number of reasons, actions will not be enqueued and therefore not executed.
+
+## Running job server in unit tests and CLI utilities
+
+Hangfire job server is automatically started by Rhetos.Jobs.Hangfire in a Rhetos web application.
+
+If you need to run the jobs processing server from another application that references the main Rhetos application's binaries, call `RhetosJobsService.InitializeJobServer(rootContainer);` at the application initialization.
+
+For example, in a LINQPad script, add `RhetosJobsService.InitializeJobServer(GetRootContainer());` before the fist `using` statement, and add a method that returns the root container at the end of the script:
+
+```cs
+IContainer GetRootContainer()
+{
+    using (var scope = ProcessContainer.CreateTransactionScopeContainer(applicationFolder))
+    {
+        var processContainerField = typeof(ProcessContainer).GetField("_singleContainer", BindingFlags.NonPublic | BindingFlags.Static);
+        var processContainer = (ProcessContainer)processContainerField.GetValue(null);
+
+        var containerField = typeof(ProcessContainer).GetField("_rhetosIocContainer", BindingFlags.NonPublic | BindingFlags.Instance);
+        var container = (Lazy<IContainer>)containerField.GetValue(processContainer);
+
+        return container.Value;
+    }
+}
+```
 
 ## Troubleshooting
 

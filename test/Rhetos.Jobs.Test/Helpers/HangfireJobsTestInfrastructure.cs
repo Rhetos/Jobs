@@ -19,17 +19,12 @@ namespace Rhetos.Jobs.Test
         /// In unit tests we need to manually initialize the RhetosJobsService.
         /// </summary>
         [AssemblyInitialize]
-        public static void HangfireJobsServiceInitialize(TestContext testContext)
+        public static void HangfireJobsServiceInitialize(TestContext _)
         {
             var containerField = typeof(ProcessContainer).GetField("_rhetosIocContainer", BindingFlags.NonPublic | BindingFlags.Instance);
             var container = (Lazy<IContainer>)containerField.GetValue(RhetosProcessHelper.ProcessContainer);
-            AutofacServiceHostFactory.Container = container.Value;
 
-            using (var scope = RhetosProcessHelper.CreateScope())
-            {
-                var rhetosJobsService = scope.Resolve<IEnumerable<IService>>().OfType<RhetosJobsService>().Single();
-                rhetosJobsService.Initialize();
-            }
+            RhetosJobsService.InitializeJobServer(container.Value);
         }
 
         public static IConfigurationBuilder SetHangfireTestConfiguration(this IConfigurationBuilder configBuilder)
