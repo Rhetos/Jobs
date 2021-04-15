@@ -15,6 +15,13 @@ namespace Rhetos.Jobs.Hangfire
 	/// </remarks>
 	public class RhetosJobsService : IService
 	{
+		private readonly RhetosJobHangfireOptions _options;
+
+		public RhetosJobsService(RhetosJobHangfireOptions options)
+		{
+			_options = options;
+		}
+
 		/// <summary>
 		/// Call this method from CLI utilities or unit tests to start a job processing server withing the current application process.
 		/// </summary>
@@ -31,7 +38,8 @@ namespace Rhetos.Jobs.Hangfire
         /// </summary>
         void IService.Initialize()
 		{
-			InitializeJobServer(AutofacHostFactory.Container);
+			if(_options.InitializeHangfireServer)
+				InitializeJobServer(AutofacHostFactory.Container);
 		}
 
 		void IService.InitializeApplicationInstance(System.Web.HttpApplication context)

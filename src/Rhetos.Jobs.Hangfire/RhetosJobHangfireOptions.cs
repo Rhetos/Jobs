@@ -9,6 +9,10 @@ namespace Rhetos.Jobs.Hangfire
 	public class RhetosJobHangfireOptions
 	{
 		/// <summary>
+		/// If true Hangfire server will be initialized in Rhetos web application. Default value is true.
+		/// </summary>
+		public bool InitializeHangfireServer { get; set; } = true;
+		/// <summary>
 		/// UserName under which enqueued actions will be executed if action is not enqueued with executeInUserContext=true. If ommited then UserName of the account of the app pool user will be used.
 		/// </summary>
 		public string ProcessUserName { get; set; }
