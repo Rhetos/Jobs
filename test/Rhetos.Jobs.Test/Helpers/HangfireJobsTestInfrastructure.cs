@@ -1,5 +1,5 @@
 ﻿using Autofac;
-using Autofac.Integration.Wcf;
+using Hangfire;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Rhetos.Jobs.Hangfire;
 using System;
@@ -24,8 +24,11 @@ namespace Rhetos.Jobs.Test
             var containerField = typeof(ProcessContainer).GetField("_rhetosIocContainer", BindingFlags.NonPublic | BindingFlags.Instance);
             var container = (Lazy<IContainer>)containerField.GetValue(RhetosProcessHelper.ProcessContainer);
 
-            RhetosJobsService.InitializeJobServer(container.Value);
+            RhetosJobServer.ConfigureHangfireJobServers(container.Value);
+            BackgroundJobServer = new BackgroundJobServer(new BackgroundJobServerOptions { ServerName =  Environment.MachineName + " unit tests" });
         }
+
+        public static BackgroundJobServer BackgroundJobServer;
 
         public static IConfigurationBuilder SetHangfireTestConfiguration(this IConfigurationBuilder configBuilder)
         {

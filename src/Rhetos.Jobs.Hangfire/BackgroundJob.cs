@@ -111,8 +111,6 @@ namespace Rhetos.Jobs.Hangfire
 		/// <summary>
 		/// By default, duplicate jobs in the same aggregation group are eliminated.
 		/// </summary>
-#pragma warning disable IDE0060 // Remove unused parameter.
 		private static bool DefaultAggregator<TParameter>(TParameter oldJob, ref TParameter newJob) => true;
-#pragma warning restore IDE0060
 	}
 }

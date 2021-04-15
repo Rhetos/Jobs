@@ -1,16 +1,15 @@
-﻿using Autofac;
-using Hangfire;
+﻿using Hangfire;
 using Hangfire.SqlServer;
 using Rhetos.Utilities;
 using System;
 
 namespace Rhetos.Jobs.Hangfire
 {
-	/// <summary>
-	/// Initializes Hangfire's global configuration, required for both the components that enqueue jobs
-	/// and the Hangfire job server that processes the jobs.
-	/// </summary>
-	public class RhetosHangfireInitialization
+    /// <summary>
+    /// Initializes Hangfire's global configuration, required for both the components that enqueue jobs
+    /// and the Hangfire job server that processes the jobs.
+    /// </summary>
+    public class RhetosHangfireInitialization
 	{
 		private readonly ConnectionString _connectionString;
 		private readonly RhetosJobHangfireOptions _options;
@@ -24,10 +23,14 @@ namespace Rhetos.Jobs.Hangfire
 			_options = options;
 		}
 
-        /// <summary>
-        /// Initializes Hangfire's global configuration, if not initialized already.
-        /// </summary>
-        public virtual void InitializeGlobalConfiguration()
+		/// <summary>
+		/// Initializes Hangfire's global configuration, if not initialized already.
+		/// </summary>
+		/// <remarks>
+		/// Call this method before using Hangfire to create background jobs in a CLI utility or unit tests.
+		/// This method is automatically called in Rhetos web application startup.
+		/// </remarks>
+		public virtual void InitializeGlobalConfiguration()
 		{
 			if (!_initialized)
 				lock (_initializationLock)
