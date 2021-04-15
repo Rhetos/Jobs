@@ -54,6 +54,9 @@
   <Namespace>Hangfire</Namespace>
 </Query>
 
+
+// This static instance of the BackgroundJobServer will keep executing the background jobs even after
+// the LINQPad script finished, until the LINQPad process is closed (Menu: Query => Cancel All Threads and Reset).
 static BackgroundJobServer BackgroundJobServer = CreateJobServer();
 
 static BackgroundJobServer CreateJobServer()
@@ -92,29 +95,35 @@ public static void Log(string message)
 	Console.WriteLine($"{DateTime.Now:o} {message}");
 }
 
+string applicationFolder => Path.GetDirectoryName(Util.CurrentQueryPath); // Path to the Rhetos application, or any subfolder.
+
 void Main()
 {
-	string applicationFolder = Path.GetDirectoryName(Util.CurrentQueryPath); // Path to the Rhetos application, or any subfolder.
 	ConsoleLogger.MinLevel = EventType.Trace;
+
+	ReportHangfireDatabaseJobs(-1).Dump("Existing jobs");
+	long lastJobId = GetHangfireDatabaseLastJobId();
 
 	using (var scope = ProcessContainer.CreateTransactionScopeContainer(applicationFolder))
 	{
 		var backgroundJobs = scope.Resolve<IBackgroundJob>();
 
-		for (int i = 0; i < 22; i++) // 20 runs in parallel for each background server.
+		for (int i = 0; i < 22; i++) // By default 20 runs in parallel for each background server.
 			backgroundJobs.AddJob<TestJobExecuter, object>(i, false, null, null);
 
 		scope.CommitChanges();
 	}
 
-	return;
-
 	Thread.Sleep(100); // Wait enough for some jobs to start, but not to finish.
 
+	ReportHangfireDatabaseJobs(lastJobId).Dump("Initially started jobs"); // Expected: 20 started (default worker count), 2 pending.
+	
 	Log("===========  STOPPING ===========");
 
 	BackgroundJobServer.SendStop();
 	BackgroundJobServer.Dispose(); // Waits some time for running jobs to finish.
+
+	ReportHangfireDatabaseJobs(lastJobId).Dump("After waiting for job server to stop"); // Expected: 20 completed, 2 pending.
 
 	Log("===========  STOPPED ===========");
 
@@ -132,12 +141,45 @@ void Main()
 	}
 
 	Thread.Sleep(10000);
-	
+
+	ReportHangfireDatabaseJobs(lastJobId).Dump("New job added. Background workers still stopped."); // Expected: 20 completed, 3 pending.
+
 	Log("===========  RESTARTING ===========");
 
 	BackgroundJobServer = RhetosJobServer.CreateHangfireJobServer();
 
 	Thread.Sleep(10000);
-	
+
+	ReportHangfireDatabaseJobs(lastJobId).Dump("Background workers restarted."); // Expected: 23 completed.
+
 	Log("===========  DONE ===========");
+}
+
+public long GetHangfireDatabaseLastJobId()
+{
+	using (var scope = ProcessContainer.CreateTransactionScopeContainer(applicationFolder))
+	{
+		string sql = "SELECT MAX(Id) FROM HangFire.Job WITH (nolock)";
+		long lastJobId = 0; 
+		var sqlExecuter = scope.Resolve<ISqlExecuter>();
+		sqlExecuter.ExecuteReader(sql, reader => lastJobId = reader.GetInt64(0));
+		return lastJobId;
+	}
+}
+
+public List<object> ReportHangfireDatabaseJobs(long lastJobId)
+{
+	using (var scope = ProcessContainer.CreateTransactionScopeContainer(applicationFolder))
+	{
+		string sql = $"SELECT StateName, COUNT(*) FROM HangFire.Job WITH (nolock) WHERE Id > {lastJobId} GROUP BY StateName";
+		var report = new List<object>();
+		var sqlExecuter = scope.Resolve<ISqlExecuter>();
+		sqlExecuter.ExecuteReader(sql,
+			reader => report.Add(new
+			{
+				StateName = reader.GetString(0),
+				Count = reader.GetInt32(1)
+			}));
+		return report;
+	}
 }

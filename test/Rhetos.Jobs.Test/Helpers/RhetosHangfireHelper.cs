@@ -1,4 +1,5 @@
-﻿using Rhetos.TestCommon;
+﻿using Rhetos.Dom.DefaultConcepts;
+using Rhetos.TestCommon;
 using Rhetos.Utilities;
 using System;
 using System.Collections.Generic;
