@@ -1,0 +1,14 @@
+﻿Module TestRhetosJobs
+{
+	Action SimpleAction '(parameter, repository, userInfo) =>
+		_domRepository.Common.AddToLog.Execute(new Common.AddToLog { Action = "TestRhetosJobs.SimpleAction", Description = parameter.Data })'
+	{
+		ShortString Data;
+	}
+
+	Action SimpleAction2 '(parameter, repository, userInfo) =>
+		_domRepository.Common.AddToLog.Execute(new Common.AddToLog { Action = "TestRhetosJobs.SimpleAction2", Description = parameter.Data })'
+	{
+		ShortString Data;
+	}
+}

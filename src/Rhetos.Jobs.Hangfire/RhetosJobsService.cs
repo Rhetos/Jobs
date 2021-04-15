@@ -1,58 +1,51 @@
 ﻿using System;
-using System.Collections.Generic;
+using Autofac;
 using Autofac.Integration.Wcf;
 using Hangfire;
-using Hangfire.SqlServer;
-using Rhetos.Utilities;
 
 namespace Rhetos.Jobs.Hangfire
 {
+	/// <summary>
+	/// Initializes Hangfire server that processes jobs in a Rhetos applications.
+	/// </summary>
+	/// <remarks>
+	/// The jobs server initialization is called automatically in a Rhetos web application (<see cref="IService"/>).
+	/// In other processes, for example CLI utilities or unit tests, call <see cref="InitializeJobServer"/> to start job processing
+	/// within the current application process.
+	/// </remarks>
 	public class RhetosJobsService : IService
 	{
-		private readonly ConnectionString _connectionString;
-		private readonly RhetosJobHangfireOptions _options;
-		public RhetosJobsService(ConnectionString connectionString, RhetosJobHangfireOptions options)
+		/// <summary>
+		/// Call this method from CLI utilities or unit tests to start a job processing server withing the current application process.
+		/// </summary>
+		public static void InitializeJobServer(ILifetimeScope container)
 		{
-			_connectionString = connectionString;
-			_options = options;
+			_rootContainer = container;
+			var hangfireInitialization = container.Resolve<RhetosHangfireInitialization>();
+			hangfireInitialization.InitializeGlobalConfiguration();
+			HangfireAspNet.Use(() => hangfireInitialization.GetHangfireServers(_rootContainer));
 		}
 
-		public void Initialize()
+        /// <summary>
+        /// This method is called automatically on Rhetos web application startup.
+        /// </summary>
+        void IService.Initialize()
 		{
-			GlobalConfiguration.Configuration.UseAutofacActivator(AutofacHostFactory.Container);
-			HangfireAspNet.Use(GetHangfireServers);
+			InitializeJobServer(AutofacHostFactory.Container);
 		}
 
-		public void InitializeApplicationInstance(System.Web.HttpApplication context)
+		void IService.InitializeApplicationInstance(System.Web.HttpApplication context)
 		{
 		}
 
-		private IEnumerable<IDisposable> GetHangfireServers()
-		{
-			GlobalConfiguration.Configuration
-				.SetDataCompatibilityLevel(CompatibilityLevel.Version_170)
-				.UseSimpleAssemblyNameTypeSerializer()
-				.UseRecommendedSerializerSettings()
-				.UseSqlServerStorage(_connectionString, new SqlServerStorageOptions
-				{
-					CommandBatchMaxTimeout = TimeSpan.FromSeconds(_options.CommandBatchMaxTimeout),
-					SlidingInvisibilityTimeout = TimeSpan.FromSeconds(_options.SlidingInvisibilityTimeout),
-					QueuePollInterval = TimeSpan.FromSeconds(_options.QueuePollInterval),
-					UseRecommendedIsolationLevel = _options.UseRecommendedIsolationLevel,
-					DisableGlobalLocks = _options.DisableGlobalLocks
-				});
+		private static ILifetimeScope _rootContainer;
 
-			yield return new BackgroundJobServer(new BackgroundJobServerOptions
-			{
-				WorkerCount = _options.WorkerCount,
-				ShutdownTimeout = TimeSpan.FromSeconds(_options.ShutdownTimeout),
-				StopTimeout = TimeSpan.FromSeconds(_options.StopTimeout),
-				SchedulePollingInterval = TimeSpan.FromSeconds(_options.SchedulePollingInterval),
-				HeartbeatInterval = TimeSpan.FromSeconds(_options.HeartbeatInterval),
-				ServerTimeout = TimeSpan.FromSeconds(_options.ServerTimeout),
-				ServerCheckInterval = TimeSpan.FromSeconds(_options.ServerCheckInterval),
-				CancellationCheckInterval = TimeSpan.FromSeconds(_options.CancellationCheckInterval),
-			});
+		public static TransactionScopeContainer CreateScope(Action<ContainerBuilder> customizeScope)
+		{
+			if (_rootContainer == null)
+				throw new InvalidOperationException($"{nameof(RhetosJobsService)} not initialized. Call {nameof(RhetosJobsService)}.{nameof(InitializeJobServer)} first.");
+
+			return new TransactionScopeContainer((IContainer)_rootContainer, customizeScope);
 		}
 	}
 }

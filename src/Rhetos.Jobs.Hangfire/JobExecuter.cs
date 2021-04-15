@@ -1,52 +1,47 @@
-﻿using System;
-using Autofac;
+﻿using Autofac;
 using Autofac.Integration.Wcf;
-using Newtonsoft.Json;
-using Rhetos.Dom;
-using Rhetos.Dom.DefaultConcepts;
-using Rhetos.Extensibility;
 using Rhetos.Logging;
 using Rhetos.Security;
 using Rhetos.Utilities;
+using System;
 
 namespace Rhetos.Jobs.Hangfire
 {
-	public class JobExecuter : IJobExecuter
+    public class JobExecuter<TExecuter, TParameter>
+		where TExecuter : IJobExecuter<TParameter>
 	{
 		private readonly ILogger _logger;
 		private readonly RhetosJobHangfireOptions _options;
 
-		public JobExecuter(ILogProvider logProvider, RhetosJobHangfireOptions options)
+        public JobExecuter(ILogProvider logProvider, RhetosJobHangfireOptions options)
 		{
-			// Note: Constructor parameters are resolved from the root DI container (set in UseAutofacActivator call in RhetosJobsService class).
+			// Note: The constructor parameters are resolved from the root DI container (set in UseAutofacActivator call in RhetosJobsService class).
 			_logger = logProvider.GetLogger(InternalExtensions.LoggerName);
 			_options = options;
-		}
+        }
 
-		public void ExecuteJob(Job job)
+		/// <summary>
+		/// Executes the job in a new unit of work (in a separate transaction and a separate Rhetos DI scope).
+		/// </summary>
+		public void ExecuteUnitOfWork(Job job)
 		{
-			_logger.Trace(() => $"ExecuteJob started.|{job.GetLogInfo()}");
+			_logger.Trace(() => $"ExecuteJob started.|{job.GetLogInfo(typeof(TExecuter))}");
 			
 			try
 			{
-				using (var scope = new TransactionScopeContainer((IContainer) AutofacHostFactory.Container,
-					builder => CustomizeScope(builder, job.ExecuteAsUser)))
+				using (var scope = RhetosJobsService.CreateScope(builder => CustomizeScope(builder, job.ExecuteAsUser)))
 				{
-					_logger.Trace(() => $"ExecuteJob TransactionScopeContainer initialized.|{job.GetLogInfo()}");
+					_logger.Trace(() => $"ExecuteJob TransactionScopeContainer initialized.|{job.GetLogInfo(typeof(TExecuter))}");
 
 					var sqlExecuter = scope.Resolve<ISqlExecuter>();
 					if (!JobExists(job.Id, sqlExecuter))
 					{
 						_logger.Trace(() =>
-							$"Job no longer exists in queue. Transaction in which was job created was rollbacked. Terminating execution.|{job.GetLogInfo()}");
+							$"Job no longer exists in queue. Transaction in which was job created was rolled back. Terminating execution.|{job.GetLogInfo(typeof(TExecuter))}");
 						return;
 					}
 
-					var actions = scope.Resolve<INamedPlugins<IActionRepository>>();
-					var actionType = scope.Resolve<IDomainObjectModel>().GetType(job.ActionName);
-					var actionRepository = actions.GetPlugin(job.ActionName);
-					var parameters = JsonConvert.DeserializeObject(job.ActionParameters, actionType);
-					actionRepository.Execute(parameters);
+					scope.Resolve<TExecuter>().Execute((TParameter)job.Parameter);
 
 					DeleteJob(job.Id, sqlExecuter);
 					scope.CommitChanges();
@@ -58,7 +53,7 @@ namespace Rhetos.Jobs.Hangfire
 				throw;
 			}
 
-			_logger.Trace(() => $"ExecuteJob completed.|{job.GetLogInfo()}");
+			_logger.Trace(() => $"ExecuteJob completed.|{job.GetLogInfo(typeof(TExecuter))}");
 		}
 
 		private static bool JobExists(Guid jobId, ISqlExecuter sqlExecuter)

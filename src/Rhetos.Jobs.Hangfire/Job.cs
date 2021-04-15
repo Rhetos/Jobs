@@ -2,37 +2,20 @@
 
 namespace Rhetos.Jobs.Hangfire
 {
-	public class Job : IEquatable<Job>
+    /// <summary>
+    /// Job parameters required for job execution.
+    /// It is serialized to the job queue storage before executing it.
+    /// </summary>
+    public class Job
 	{
 		public Guid Id { get; set; }
-		public string ActionName { get; set; }
-		public string ActionParameters { get; set; }
+		public object Parameter { get; set; }
 		public string ExecuteAsUser { get; set; }
 
-		public bool Equals(Job other)
+		public string GetLogInfo(Type executerType)
 		{
-			if (ReferenceEquals(null, other)) return false;
-			if (ReferenceEquals(this, other)) return true;
-			return ActionName == other.ActionName && ActionParameters == other.ActionParameters && ExecuteAsUser == other.ExecuteAsUser;
-		}
-
-		public override bool Equals(object obj)
-		{
-			if (ReferenceEquals(null, obj)) return false;
-			if (ReferenceEquals(this, obj)) return true;
-			if (obj.GetType() != this.GetType()) return false;
-			return Equals((Job) obj);
-		}
-
-		public override int GetHashCode()
-		{
-			unchecked
-			{
-				var hashCode = (ActionName != null ? ActionName.GetHashCode() : 0);
-				hashCode = (hashCode * 397) ^ (ActionParameters != null ? ActionParameters.GetHashCode() : 0);
-				hashCode = (hashCode * 397) ^ (ExecuteAsUser != null ? ExecuteAsUser.GetHashCode() : 0);
-				return hashCode;
-			}
+			var userInfo = string.IsNullOrWhiteSpace(ExecuteAsUser) ? "User not specified" : $"ExecuteInUserContext: {ExecuteAsUser}";
+			return $"JobId: {Id}|{userInfo}|{executerType}|{Parameter}";
 		}
 	}
 }
