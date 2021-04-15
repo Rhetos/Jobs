@@ -1,4 +1,6 @@
-﻿namespace Rhetos.Jobs.Hangfire
+﻿using System;
+
+namespace Rhetos.Jobs.Hangfire
 {
 	/// <summary>
 	/// Rhetos.Jobs.Hangfire configuration settings
@@ -35,5 +37,38 @@
 		/// Default value is true. For usage of the option see Hangfire documentation.
 		/// </summary>
 		public bool DisableGlobalLocks { get; set; } = true;
+
+		/// <summary>
+		/// Default value is min value of Environment.ProcessorCount and 20. For usage of the option see Hangfire documentation.
+		/// </summary>
+		public int WorkerCount { get; set; } = Math.Min(Environment.ProcessorCount * 5, 20);
+		/// <summary>
+		/// Value is in seconds. Default value is 15. For usage of the option see Hangfire documentation.
+		/// </summary>
+		public int ShutdownTimeout { get; set; } = 15;
+		/// <summary>
+		/// Value is in seconds. Default value is 0. For usage of the option see Hangfire documentation.
+		/// </summary>
+		public int StopTimeout { get; set; } = 0;
+		/// <summary>
+		/// Value is in seconds. Default value is 15. For usage of the option see Hangfire documentation.
+		/// </summary>
+		public int SchedulePollingInterval { get; set; } = 15;
+		/// <summary>
+		/// Value is in seconds. Default value is 30. For usage of the option see Hangfire documentation.
+		/// </summary>
+		public int HeartbeatInterval { get; set; } = 30;
+		/// <summary>
+		/// Value is in seconds. Default value is 300. For usage of the option see Hangfire documentation.
+		/// </summary>
+		public int ServerTimeout { get; set; } = 300;
+		/// <summary>
+		/// Value is in seconds. Default value is 300. For usage of the option see Hangfire documentation.
+		/// </summary>
+		public int ServerCheckInterval { get; set; } = 300;
+		/// <summary>
+		/// Value is in seconds. Default value is 5. For usage of the option see Hangfire documentation.
+		/// </summary>
+		public int CancellationCheckInterval { get; set; } = 5;
 	}
 }

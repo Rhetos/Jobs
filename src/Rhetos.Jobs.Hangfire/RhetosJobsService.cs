@@ -42,7 +42,17 @@ namespace Rhetos.Jobs.Hangfire
 					DisableGlobalLocks = _options.DisableGlobalLocks
 				});
 
-			yield return new BackgroundJobServer();
+			yield return new BackgroundJobServer(new BackgroundJobServerOptions
+			{
+				WorkerCount = _options.WorkerCount,
+				ShutdownTimeout = TimeSpan.FromSeconds(_options.ShutdownTimeout),
+				StopTimeout = TimeSpan.FromSeconds(_options.StopTimeout),
+				SchedulePollingInterval = TimeSpan.FromSeconds(_options.SchedulePollingInterval),
+				HeartbeatInterval = TimeSpan.FromSeconds(_options.HeartbeatInterval),
+				ServerTimeout = TimeSpan.FromSeconds(_options.ServerTimeout),
+				ServerCheckInterval = TimeSpan.FromSeconds(_options.ServerCheckInterval),
+				CancellationCheckInterval = TimeSpan.FromSeconds(_options.CancellationCheckInterval),
+			});
 		}
 	}
 }
