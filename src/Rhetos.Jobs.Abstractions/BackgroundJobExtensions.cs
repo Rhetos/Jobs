@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
+using Rhetos.Jobs;
 
-namespace Rhetos.Jobs
+namespace Rhetos.Dom.DefaultConcepts
 {
     public static class BackgroundJobExtensions
     {

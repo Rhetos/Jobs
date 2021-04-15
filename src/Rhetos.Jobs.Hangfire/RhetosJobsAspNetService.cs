@@ -16,13 +16,23 @@ namespace Rhetos.Jobs.Hangfire
 	/// </remarks>
 	public class RhetosJobsAspNetService : IService
 	{
+		private readonly RhetosJobHangfireOptions _options;
+
+		public RhetosJobsAspNetService(RhetosJobHangfireOptions options)
+		{
+			_options = options;
+		}
+
 		/// <summary>
 		/// This method is called automatically on Rhetos web application startup.
 		/// </summary>
 		public void Initialize()
 		{
-			RhetosJobServer.ConfigureHangfireJobServers(AutofacHostFactory.Container, null);
-			HangfireAspNet.Use(CreateHangfireServers);
+			if(_options.InitializeHangfireServer)
+			{
+				RhetosJobServer.ConfigureHangfireJobServers(AutofacHostFactory.Container, null);
+				HangfireAspNet.Use(CreateHangfireServers);
+			}
 		}
 
 		private static IEnumerable<IDisposable> CreateHangfireServers()

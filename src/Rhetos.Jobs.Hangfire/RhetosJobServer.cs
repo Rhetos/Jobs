@@ -5,19 +5,19 @@ using System.Collections.Generic;
 
 namespace Rhetos.Jobs.Hangfire
 {
-	/// <summary>
-	/// Initializes Hangfire server for background job processing in a Rhetos applications.
-	/// </summary>
-	/// <remarks>
-	/// The jobs server initialization is called automatically in a Rhetos web application startup (<see cref="IService"/> implementation).
-	/// In other processes, for example CLI utilities or unit tests, call <see cref="ConfigureHangfireJobServers"/> before creating 
-	/// <see cref="BackgroundJobServer"/> to start job processing in the current application process.
-	/// </remarks>
-	public static class RhetosJobServer
-	{
-		/// <summary>Using WeakReference to avoid interfering with the DI container disposal, since this is a static field.</summary>
-		private static WeakReference<ILifetimeScope> _containerReference;
-		private static Action<ContainerBuilder> _customRegistrations;
+    /// <summary>
+    /// Initializes Hangfire server for background job processing in a Rhetos applications.
+    /// </summary>
+    /// <remarks>
+    /// The jobs server initialization is called automatically in a Rhetos web application startup (<see cref="IService"/> implementation).
+    /// In other processes, for example CLI utilities or unit tests, call <see cref="ConfigureHangfireJobServers"/> before creating 
+    /// <see cref="BackgroundJobServer"/> to start job processing in the current application process.
+    /// </remarks>
+    public static class RhetosJobServer
+    {
+        /// <summary>Using WeakReference to avoid interfering with the DI container disposal, since this is a static field.</summary>
+        private static WeakReference<ILifetimeScope> _containerReference;
+        private static Action<ContainerBuilder> _customRegistrations;
 
         /// <summary>
         /// Initializes Hangfire for background job processing of Rhetos jobs.
@@ -41,10 +41,10 @@ namespace Rhetos.Jobs.Hangfire
             if (container is null)
                 throw new ArgumentNullException(nameof(container));
             _containerReference = new WeakReference<ILifetimeScope>(container);
-			_customRegistrations = customRegistrations;
+            _customRegistrations = customRegistrations;
 
             container.Resolve<RhetosHangfireInitialization>().InitializeGlobalConfiguration();
-			GlobalConfiguration.Configuration.UseAutofacActivator(container);
+            GlobalConfiguration.Configuration.UseAutofacActivator(container);
         }
 
         /// <summary>
@@ -53,14 +53,22 @@ namespace Rhetos.Jobs.Hangfire
         /// <remarks>
         /// The Hangfire BackgroundJobServer will start processing background jobs immediately.
         /// </remarks>
-		public static BackgroundJobServer CreateHangfireJobServer()
+        public static BackgroundJobServer CreateHangfireJobServer()
         {
             var container = GetContainer();
-            // TODO: Resolve options from the `container`, to set WorkerCount and other settings.
-            // Default value for WorkerCount should be 1 or 2 for common Rhetos applications, to avoid overloading the database, since the processing bottleneck is usually in the database.
-            return new BackgroundJobServer(new BackgroundJobServerOptions { WorkerCount = 20 });
+            var options = container.Resolve<RhetosJobHangfireOptions>();
+            return new BackgroundJobServer(new BackgroundJobServerOptions
+            {
+                WorkerCount = options.WorkerCount,
+                ShutdownTimeout = TimeSpan.FromSeconds(options.ShutdownTimeout),
+                StopTimeout = TimeSpan.FromSeconds(options.StopTimeout),
+                SchedulePollingInterval = TimeSpan.FromSeconds(options.SchedulePollingInterval),
+                HeartbeatInterval = TimeSpan.FromSeconds(options.HeartbeatInterval),
+                ServerTimeout = TimeSpan.FromSeconds(options.ServerTimeout),
+                ServerCheckInterval = TimeSpan.FromSeconds(options.ServerCheckInterval),
+                CancellationCheckInterval = TimeSpan.FromSeconds(options.CancellationCheckInterval),
+            });
         }
-
 
         /// <summary>
         /// Creates a new unit of work scope, before executing a <see cref="IJobExecuter{TParameter}"/> implementation.
@@ -79,5 +87,5 @@ namespace Rhetos.Jobs.Hangfire
                 throw new InvalidOperationException($"The previously provided DI container has been disposed. Call {nameof(RhetosJobServer)}.{nameof(ConfigureHangfireJobServers)} again, if directly executing background jobs.");
             return container;
         }
-	}
+    }
 }
