@@ -74,5 +74,9 @@ namespace Rhetos.Jobs.Hangfire
 		/// Value is in seconds. Default value is 5. For usage of the option see Hangfire documentation.
 		/// </summary>
 		public int CancellationCheckInterval { get; set; } = 5;
+		/// <summary>
+		/// Array of queue names which will be processed by this instance of Hangfire server. Default is '["default"]'.
+		/// </summary>
+		public string[] Queues { get; set; } = {"default"};
 	}
 }

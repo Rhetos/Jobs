@@ -4,6 +4,8 @@ using Rhetos.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using Hangfire;
+using Hangfire.States;
 
 namespace Rhetos.Jobs.Hangfire
 {
@@ -54,7 +56,7 @@ namespace Rhetos.Jobs.Hangfire
 			_logger.Trace(() => $"Job enqueued in Hangfire.|{job.GetLogInfo()}");
 		}
 
-        public void AddJob<TExecuter, TParameter>(TParameter parameter, bool executeInUserContext, object aggregationGroup, JobAggregator<TParameter> jobAggregator)
+        public void AddJob<TExecuter, TParameter>(TParameter parameter, bool executeInUserContext, object aggregationGroup, JobAggregator<TParameter> jobAggregator, string queue = null)
 			where TExecuter : IJobExecuter<TParameter>
         {
 			_hangfireInitialization.InitializeGlobalConfiguration();
@@ -100,9 +102,23 @@ namespace Rhetos.Jobs.Hangfire
 				}
 			}
 
-			// Not enqueuing immediately to Hangfire, to allow later duplicate jobs to suppress the current one.
-			job.EnqueueJob = () => global::Hangfire.BackgroundJob.Enqueue<JobExecuter<TExecuter, TParameter>>(
-				executer => executer.ExecuteUnitOfWork(job.Job));
+			if (string.IsNullOrWhiteSpace(queue) || queue.ToLower() == "default")
+			{
+				// Not enqueuing immediately to Hangfire, to allow later duplicate jobs to suppress the current one.
+				job.EnqueueJob = () => global::Hangfire.BackgroundJob.Enqueue<JobExecuter<TExecuter, TParameter>>(
+					executer => executer.ExecuteUnitOfWork(job.Job));
+			}
+			else
+			{
+				// Not enqueuing immediately to Hangfire, to allow later duplicate jobs to suppress the current one.
+				// Only way to use specific queue is to use new instance of BackgroundJobClient and set specific EnqueuedState.
+				job.EnqueueJob = () =>
+				{
+					var client = new BackgroundJobClient();
+					var state = new EnqueuedState(queue.ToLower());
+					client.Create<JobExecuter<TExecuter, TParameter>>(e => e.ExecuteUnitOfWork(job.Job), state);
+				};
+			}
 
 			_jobInstances.Add(job);
 			_logger.Trace(() => $"Job enqueued.|{job.GetLogInfo()}");

@@ -64,6 +64,7 @@ namespace Rhetos.Jobs.Hangfire
 		        ServerTimeout = TimeSpan.FromSeconds(_options.ServerTimeout),
 		        ServerCheckInterval = TimeSpan.FromSeconds(_options.ServerCheckInterval),
 		        CancellationCheckInterval = TimeSpan.FromSeconds(_options.CancellationCheckInterval),
+				Queues = _options.Queues
 	        });
         }
 

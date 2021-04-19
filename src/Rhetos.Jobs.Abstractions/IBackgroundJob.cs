@@ -39,7 +39,10 @@ namespace Rhetos.Jobs
 		/// It will be called for each new job, with provided last instance of the same job type, user context and the same aggregation group, if such last instance exists.
 		/// See <see cref="JobAggregator{TParameter}"/> for more details.
 		/// </param>
-		void AddJob<TExecuter, TParameter>(TParameter parameter, bool executeInUserContext, object aggregationGroup, JobAggregator<TParameter> jobAggregator)
+		/// <param name="queue">
+		/// Name of the queue. Default is null.
+		/// </param>
+		void AddJob<TExecuter, TParameter>(TParameter parameter, bool executeInUserContext, object aggregationGroup, JobAggregator<TParameter> jobAggregator, string queue = null)
 			where TExecuter : IJobExecuter<TParameter>;
 	}
 
