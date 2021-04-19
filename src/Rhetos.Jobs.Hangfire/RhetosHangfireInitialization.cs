@@ -1,9 +1,7 @@
-﻿using Autofac;
-using Hangfire;
+﻿using Hangfire;
 using Hangfire.SqlServer;
 using Rhetos.Utilities;
 using System;
-using System.Collections.Generic;
 
 namespace Rhetos.Jobs.Hangfire
 {
@@ -28,6 +26,10 @@ namespace Rhetos.Jobs.Hangfire
         /// <summary>
         /// Initializes Hangfire's global configuration, if not initialized already.
         /// </summary>
+		/// <remarks>
+		/// Call this method before using Hangfire to create background jobs in a CLI utility or unit tests.
+		/// This method is automatically called in Rhetos web application startup.
+		/// </remarks>
         public virtual void InitializeGlobalConfiguration()
 		{
 			if (!_initialized)
@@ -67,6 +69,4 @@ namespace Rhetos.Jobs.Hangfire
 				Queues = _options.Queues
 	        });
         }
-
-	}
 }

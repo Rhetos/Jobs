@@ -94,13 +94,25 @@ Enqueued actions will be executed asynchronously, immediately after the transact
 
 Hangfire job server is automatically started by Rhetos.Jobs.Hangfire in a Rhetos web application.
 
-If you need to run the jobs processing server from another application that references the main Rhetos application's binaries, call `RhetosJobsService.InitializeJobServer(rootContainer);` at the application initialization.
+If you need to run the jobs processing server from another application that references the main Rhetos application's binaries,
+call `RhetosJobServer.ConfigureHangfireJobServers` method at the application initialization,
+then call `RhetosJobServer.CreateHangfireJobServer()` to create a Hangfire job server.
+The Hangfire job server will start processing background jobs immediately.
 
-For example, in a LINQPad script, add `RhetosJobsService.InitializeJobServer(GetRootContainer());` before the fist `using` statement, and add a method that returns the root container at the end of the script:
+For example, if you need to run background jobs in a **LINQPad script**, add the following code to the script.
 
 ```cs
-IContainer GetRootContainer()
+static BackgroundJobServer BackgroundJobServer = CreateJobServer();
+
+static BackgroundJobServer CreateJobServer()
 {
+    RhetosJobServer.ConfigureHangfireJobServers(GetRootContainer(), builder => builder.RegisterType<TestJobExecuter>());
+    return RhetosJobServer.CreateHangfireJobServer();
+}
+
+static IContainer GetRootContainer()
+{
+    string applicationFolder = Path.GetDirectoryName(Util.CurrentQueryPath); // Path to the Rhetos application, or any subfolder.
     using (var scope = ProcessContainer.CreateTransactionScopeContainer(applicationFolder))
     {
         var processContainerField = typeof(ProcessContainer).GetField("_singleContainer", BindingFlags.NonPublic | BindingFlags.Static);

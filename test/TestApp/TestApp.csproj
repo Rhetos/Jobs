@@ -85,6 +85,9 @@
     <Content Include="DslScripts\AsyncAction.rhe" />
     <Content Include="DslScripts\ActionJobExecuterTest.rhe" />
     <Content Include="Template.ConnectionStrings.config" />
+    <Content Include="LinqPad\JobsStopRestart.linq" />
+    <Content Include="LinqPad\Rhetos Server DOM.linq" />
+    <Content Include="LinqPad\Rhetos Server SOAP.linq" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>

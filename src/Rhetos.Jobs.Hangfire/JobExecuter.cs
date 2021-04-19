@@ -1,5 +1,4 @@
 ﻿using Autofac;
-using Autofac.Integration.Wcf;
 using Rhetos.Logging;
 using Rhetos.Security;
 using Rhetos.Utilities;
@@ -29,7 +28,7 @@ namespace Rhetos.Jobs.Hangfire
 			
 			try
 			{
-				using (var scope = RhetosJobsService.CreateScope(builder => CustomizeScope(builder, job.ExecuteAsUser)))
+				using (var scope = RhetosJobServer.CreateScope(builder => CustomizeScope(builder, job.ExecuteAsUser)))
 				{
 					_logger.Trace(() => $"ExecuteJob TransactionScopeContainer initialized.|{job.GetLogInfo(typeof(TExecuter))}");
 
