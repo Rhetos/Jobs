@@ -21,7 +21,7 @@ namespace Rhetos.Dom.DefaultConcepts
         /// <param name="optimizeDuplicates">
         /// If true, previous same Actions (same Action with same parameters) within the current scope (web request) will be removed from queue.
         /// </param>
-        public static void EnqueueAction(this IBackgroundJob backgroundJob, object action, bool executeInUserContext, bool optimizeDuplicates)
+        public static void EnqueueAction(this IBackgroundJob backgroundJob, object action, bool executeInUserContext, bool optimizeDuplicates, string queue)
         {
             var jobParameters = new ActionJobParameter(action);
 
@@ -29,7 +29,8 @@ namespace Rhetos.Dom.DefaultConcepts
                 jobParameters,
                 executeInUserContext,
                 optimizeDuplicates ? JsonConvert.SerializeObject(jobParameters) : null,
-                null);
+                null,
+                queue);
         }
     }
 }
