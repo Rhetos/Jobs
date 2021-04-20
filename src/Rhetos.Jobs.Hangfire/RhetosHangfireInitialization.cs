@@ -23,14 +23,14 @@ namespace Rhetos.Jobs.Hangfire
 			_options = options;
 		}
 
-        /// <summary>
-        /// Initializes Hangfire's global configuration, if not initialized already.
-        /// </summary>
+		/// <summary>
+		/// Initializes Hangfire's global configuration, if not initialized already.
+		/// </summary>
 		/// <remarks>
 		/// Call this method before using Hangfire to create background jobs in a CLI utility or unit tests.
 		/// This method is automatically called in Rhetos web application startup.
 		/// </remarks>
-        public virtual void InitializeGlobalConfiguration()
+		public virtual void InitializeGlobalConfiguration()
 		{
 			if (!_initialized)
 				lock (_initializationLock)
@@ -52,21 +52,5 @@ namespace Rhetos.Jobs.Hangfire
 						_initialized = true;
 					}
 		}
-
-        public IEnumerable<IDisposable> GetHangfireServers(ILifetimeScope container)
-        {
-	        GlobalConfiguration.Configuration.UseAutofacActivator(container);
-	        yield return new BackgroundJobServer(new BackgroundJobServerOptions
-	        {
-		        WorkerCount = _options.WorkerCount,
-		        ShutdownTimeout = TimeSpan.FromSeconds(_options.ShutdownTimeout),
-		        StopTimeout = TimeSpan.FromSeconds(_options.StopTimeout),
-		        SchedulePollingInterval = TimeSpan.FromSeconds(_options.SchedulePollingInterval),
-		        HeartbeatInterval = TimeSpan.FromSeconds(_options.HeartbeatInterval),
-		        ServerTimeout = TimeSpan.FromSeconds(_options.ServerTimeout),
-		        ServerCheckInterval = TimeSpan.FromSeconds(_options.ServerCheckInterval),
-		        CancellationCheckInterval = TimeSpan.FromSeconds(_options.CancellationCheckInterval),
-				Queues = _options.Queues
-	        });
-        }
+	}
 }
