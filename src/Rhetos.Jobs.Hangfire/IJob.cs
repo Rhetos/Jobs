@@ -21,7 +21,7 @@ using System;
 
 namespace Rhetos.Jobs.Hangfire
 {
-    public interface IJob
+    internal interface IJob
     {
         Guid Id { get; }
         string ExecuteAsUser { get; }

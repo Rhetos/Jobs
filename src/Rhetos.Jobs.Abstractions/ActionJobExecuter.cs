@@ -28,7 +28,7 @@ namespace Rhetos.Jobs
     /// <remarks>
     /// Instead of using this class directly, you may add a new job instance by calling
     /// <see cref="BackgroundJobExtensions.EnqueueAction"/>
-    /// extension method on the <see cref="IBackgroundJob"/>.
+    /// extension method on the <see cref="IBackgroundJobs"/>.
     /// </remarks>
     public class ActionJobExecuter : IJobExecuter<ActionJobParameter>
     {

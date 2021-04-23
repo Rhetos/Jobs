@@ -1,10 +1,10 @@
 ﻿Module TestLongRunningJob
 {
 	Action AddLongRunningJob '(parameter, repository, userInfo) =>
-		_backgroundJob.AddJob<TestApp.LongRunningJobExecuter, int>(parameter.DurationSeconds.Value, executeInUserContext: false)'
+		_backgroundJobs.AddJob<TestApp.LongRunningJobExecuter, int>(parameter.DurationSeconds.Value, executeInUserContext: false)'
 	{
 		Integer DurationSeconds;
 
-		RepositoryUses _backgroundJob 'Rhetos.Jobs.IBackgroundJob, Rhetos.Jobs.Abstractions';
+		RepositoryUses _backgroundJobs 'Rhetos.Jobs.IBackgroundJobs, Rhetos.Jobs.Abstractions';
 	}
 }

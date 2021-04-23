@@ -24,7 +24,7 @@ namespace Rhetos.Jobs.Hangfire
     /// <summary>
     /// Extended information on job, for job management before it is executed.
     /// </summary>
-    public class JobSchedule
+    internal class JobSchedule
 	{
 		public IJob Job { get; set; }
 		public Type ExecuterType { get; set; }

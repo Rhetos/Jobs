@@ -105,7 +105,7 @@ void Main()
 
 	using (var scope = ProcessContainer.CreateTransactionScopeContainer(applicationFolder))
 	{
-		var backgroundJobs = scope.Resolve<IBackgroundJob>();
+		var backgroundJobs = scope.Resolve<IBackgroundJobs>();
 
 		for (int i = 0; i < 5; i++) // By default 2 runs in parallel for each background server.
 			backgroundJobs.AddJob<TestJobExecuter, object>(i, false, null, null);
@@ -132,7 +132,7 @@ void Main()
 
 	using (var scope = ProcessContainer.CreateTransactionScopeContainer(applicationFolder))
 	{
-		var backgroundJobs = scope.Resolve<IBackgroundJob>();
+		var backgroundJobs = scope.Resolve<IBackgroundJobs>();
 
 		backgroundJobs.AddJob<TestJobExecuter, object>(-1, false, null, null);
 

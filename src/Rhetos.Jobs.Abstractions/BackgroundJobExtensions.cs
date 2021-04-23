@@ -43,7 +43,7 @@ namespace Rhetos.Dom.DefaultConcepts
 		/// <param name="queue">
 		/// Name of the queue. Default is null.
 		/// </param>
-        public static void EnqueueAction(this IBackgroundJob backgroundJob, object action, bool executeInUserContext, bool optimizeDuplicates, string queue = null)
+        public static void EnqueueAction(this IBackgroundJobs backgroundJob, object action, bool executeInUserContext, bool optimizeDuplicates, string queue = null)
         {
             var jobParameters = new ActionJobParameter(action);
 

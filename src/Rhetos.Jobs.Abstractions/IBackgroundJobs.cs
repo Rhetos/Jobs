@@ -24,7 +24,7 @@ namespace Rhetos.Jobs
     /// <summary>
     /// Background job execution service API.
     /// </summary>
-    public interface IBackgroundJob
+    public interface IBackgroundJobs
 	{
 		/// <summary>
 		/// Creates a new background job that will be executed after the current transaction is completed.

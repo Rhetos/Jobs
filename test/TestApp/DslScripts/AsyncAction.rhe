@@ -13,15 +13,15 @@
 		var id = Guid.NewGuid();
 		var action = new RhetosJobs.TheJob{ Description = $"TheJob started from Happy action {id}." };
 		repository.RhetosJobs.TheEntity.Insert(new RhetosJobs.TheEntity { Description = action.Description });
-		backgroundJob.EnqueueAction(action, true, true);
-		backgroundJob.EnqueueAction(action, false, true);
-		backgroundJob.EnqueueAction(action, false, true);
-		backgroundJob.EnqueueAction(action, false, true);
-		backgroundJob.EnqueueAction(action, false, true);
-		backgroundJob.EnqueueAction(action, false, true);
+		backgroundJobs.EnqueueAction(action, true, true);
+		backgroundJobs.EnqueueAction(action, false, true);
+		backgroundJobs.EnqueueAction(action, false, true);
+		backgroundJobs.EnqueueAction(action, false, true);
+		backgroundJobs.EnqueueAction(action, false, true);
+		backgroundJobs.EnqueueAction(action, false, true);
 	}'
 	{
-		RepositoryUses 'backgroundJob' 'Rhetos.Jobs.IBackgroundJob, Rhetos.Jobs.Abstractions';
+		RepositoryUses 'backgroundJobs' 'Rhetos.Jobs.IBackgroundJobs, Rhetos.Jobs.Abstractions';
 	}
 	
 	Action HappyWithWait '(parameters, repository, userInfo) => 
@@ -29,12 +29,12 @@
 		var id = Guid.NewGuid();
 		var action = new RhetosJobs.TheJob{ Description = $"TheJob started from HappyWithWait action {id}." };
 		repository.RhetosJobs.TheEntity.Insert(new RhetosJobs.TheEntity { Description = action.Description });
-		backgroundJob.EnqueueAction(action, false, true);
+		backgroundJobs.EnqueueAction(action, false, true);
 		//System.Threading.Thread.Sleep(20000);
 		// throw new Rhetos.UserException("Ne može");
 	}'
 	{
-		RepositoryUses 'backgroundJob' 'Rhetos.Jobs.IBackgroundJob, Rhetos.Jobs.Abstractions';
+		RepositoryUses 'backgroundJobs' 'Rhetos.Jobs.IBackgroundJobs, Rhetos.Jobs.Abstractions';
 	}
 
 	Action TheJob '(parameters, repository, userInfo) => 

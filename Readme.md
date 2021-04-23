@@ -60,9 +60,9 @@ See Hangfire documentation for more info in this issue: [Using Global.asax.cs fi
 
 In order to enqueue asynchronous execution of an action you have to:
 
-* Demand from IOC container an instance of `IBackgroundJob`.
+* Demand from IOC container an instance of `IBackgroundJobs`.
 * Create action parameters of an action you wish to enqueue for asynchronous execution.
-* Call `EnqueueAction` method of `IBackgroundJob` object. Method parameters are:
+* Call `EnqueueAction` method of `IBackgroundJobs` object. Method parameters are:
   * object action - Action which should be executed.
   * bool executeInUserContext - If true Action will be executed in context of the user which started the transaction in which Action was enqueued. Otherwise it will be executed in context of service account.
   * bool optimizeDuplicates - If true previous same Actions (same Action with same parameters) will be removed from queue.
@@ -85,7 +85,7 @@ Module Test
           }
         }';
     }
-    RepositoryUses _backgroundJob 'Rhetos.Jobs.IBackgroundJob, Rhetos.Jobs.Abstractions';
+    RepositoryUses _backgroundJob 'Rhetos.Jobs.IBackgroundJobs, Rhetos.Jobs.Abstractions';
   }
   
   Action ProcessSomething '(parameters, repository, userInfo) =>

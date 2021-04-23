@@ -45,11 +45,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AutofacConfiguration.cs" />
-    <Compile Include="BackgroundJob.cs" />
+    <Compile Include="BackgroundJobs.cs" />
     <Compile Include="IJob.cs" />
     <Compile Include="InternalExtensions.cs" />
     <Compile Include="Job.cs" />
-    <Compile Include="JobExecuter.cs" />
+    <Compile Include="RhetosExecutionContext.cs" />
     <Compile Include="JobSchedule.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RhetosHangfireInitialization.cs" />

@@ -30,8 +30,8 @@ namespace Rhetos.Jobs.Hangfire
 		{
 			builder.Register(context => context.Resolve<IConfiguration>().GetOptions<RhetosJobHangfireOptions>()).SingleInstance();
 			builder.RegisterType<RhetosJobsAspNetService>().As<IService>();
-			builder.RegisterType<BackgroundJob>().As<IBackgroundJob>().InstancePerLifetimeScope();
-			builder.RegisterGeneric(typeof(JobExecuter<,>)).InstancePerLifetimeScope();
+			builder.RegisterType<BackgroundJobs>().As<IBackgroundJobs>().InstancePerLifetimeScope();
+			builder.RegisterGeneric(typeof(RhetosExecutionContext<,>)).InstancePerLifetimeScope();
 			builder.RegisterType<RhetosHangfireInitialization>().SingleInstance();
 
 			base.Load(builder);

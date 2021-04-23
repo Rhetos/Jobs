@@ -46,7 +46,7 @@
     <Compile Include="BackgroundJobExtensions.cs" />
     <Compile Include="ActionJobParameter.cs" />
     <Compile Include="AutofacConfiguration.cs" />
-    <Compile Include="IBackgroundJob.cs" />
+    <Compile Include="IBackgroundJobs.cs" />
     <Compile Include="IJobExecuter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

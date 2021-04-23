@@ -33,7 +33,7 @@ namespace Rhetos.Jobs.Test
         public static readonly IUserInfo JobsCreatedByUser = new TestUserInfo("TestJobsUser", "TestJobsMachine");
 
         /// <summary>
-        /// Resolves IBackgroundJob from DI and adds the new job by calling <see cref="BackgroundJobExtensions.EnqueueAction"/>.
+        /// Resolves IBackgroundJobs from DI and adds the new job by calling <see cref="BackgroundJobExtensions.EnqueueAction"/>.
         /// Returns Rhetos job IDs for provided actions.
         /// </summary>
         public static List<Guid> EnqueueActionJobs(List<(object ActionParameter, bool ExecuteInUserContext, bool OptimizeDuplicates)> actions)
@@ -44,7 +44,7 @@ namespace Rhetos.Jobs.Test
                 .AddLogMonitor(log)
                 .AddFakeUser(JobsCreatedByUser)))
             {
-                var jobs = scope.Resolve<IBackgroundJob>();
+                var jobs = scope.Resolve<IBackgroundJobs>();
 
                 foreach (var action in actions)
                 {
