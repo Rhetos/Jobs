@@ -28,7 +28,7 @@ namespace Rhetos.Jobs.Hangfire
 		/// </summary>
 		public void Initialize()
 		{
-			if(_options.InitializeHangfireServer)
+			if (_options.InitializeHangfireServer)
 			{
 				RhetosJobServer.ConfigureHangfireJobServers(AutofacHostFactory.Container, null);
 				HangfireAspNet.Use(CreateHangfireServers);
@@ -53,6 +53,34 @@ namespace Rhetos.Jobs.Hangfire
 		public void InitializeApplicationInstance(System.Web.HttpApplication context)
 		{
 			// No need for instance-specific initialization.
+		}
+
+		/// <summary>
+		/// Stops all Hangfire jobs servers that were created by this class.
+		/// This method will wait the any currently running jobs to complete for duration of <see cref="RhetosJobHangfireOptions.ShutdownTimeout"/>,
+		/// then return anyway if not completed (see Hangfire documentation on ShutdownTimeout).
+		/// </summary>
+		/// <remarks>
+		/// The Shutdown method may be called from Application_End method in Global.asax.cs, but it is currently not needed in Global.asax
+		/// because <see cref="RhetosJobsAspNetService"/> uses <see cref="HangfireAspNet"/> to manage job server instances.
+		/// </remarks>
+		public static void Shutdown()
+        {
+			if (AspNetJobServers == null)
+				return;
+
+			var servers = new List<BackgroundJobServer>();
+			while (AspNetJobServers.TryTake(out var serverReference))
+				if (serverReference != null && serverReference.TryGetTarget(out var server))
+					servers.Add(server);
+
+			// Sending stop signals to all server (in parallel), to avoid waiting for each independently (from Hangfire documentation).
+			foreach (var server in servers)
+				try { server.SendStop(); } catch { } // Ignoring possible issues if any server is already disposed on shutdown.
+
+			// Waiting for each server to stop.
+			foreach (var server in servers)
+				try { server.Dispose(); } catch { } // Ignoring possible issues if any server is already disposed on shutdown.
 		}
 	}
 }

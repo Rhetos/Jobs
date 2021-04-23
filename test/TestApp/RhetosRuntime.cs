@@ -26,6 +26,7 @@ using Rhetos.Utilities;
 using Rhetos.Web;
 using System;
 using System.ComponentModel.Composition;
+using TestApp;
 
 namespace Rhetos
 {
@@ -86,8 +87,10 @@ namespace Rhetos
                 builder.GetPluginRegistration().FindAndRegisterPlugins<IHomePageSnippet>();
             }
 
-            registerCustomComponents?.Invoke(builder);
+            // >> Register additional application components here. <<
+            builder.RegisterType<LongRunningJobExecuter>();
 
+            registerCustomComponents?.Invoke(builder);
             return builder.Build();
         }
     }

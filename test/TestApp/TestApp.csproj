@@ -69,6 +69,7 @@
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
+    <Compile Include="LongRunningJobExecuter.cs" />
     <Compile Include="RhetosRuntime.cs" />
     <Compile Include="RhetosService.svc.cs">
       <DependentUpon>RhetosService.svc</DependentUpon>
@@ -88,6 +89,7 @@
     <Content Include="LinqPad\JobsStopRestart.linq" />
     <Content Include="LinqPad\Rhetos Server DOM.linq" />
     <Content Include="LinqPad\Rhetos Server SOAP.linq" />
+    <Content Include="DslScripts\LongRunningJobTest.rhe" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
