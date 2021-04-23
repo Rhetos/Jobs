@@ -43,9 +43,11 @@ namespace Rhetos.Jobs.Hangfire
 		public bool DisableGlobalLocks { get; set; } = true;
 
 		/// <summary>
-		/// Default value is min value of Environment.ProcessorCount and 20. For usage of the option see Hangfire documentation.
+		/// Default value for WorkerCount should be 1 or 2 for common Rhetos applications,
+		/// to avoid overloading the database, since the processing bottleneck is usually in the database.
+		/// For usage of the option see Hangfire documentation.
 		/// </summary>
-		public int WorkerCount { get; set; } = Math.Min(Environment.ProcessorCount * 5, 20);
+		public int WorkerCount { get; set; } = 2;
 		/// <summary>
 		/// Value is in seconds. Default value is 15. For usage of the option see Hangfire documentation.
 		/// </summary>

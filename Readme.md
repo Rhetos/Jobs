@@ -1,6 +1,6 @@
-# Rhetos.Jobs
+# Rhetos.Jobs.Hangfire
 
-Rhetos.Jobs is a DSL package (a plugin module) for [Rhetos development platform](https://github.com/Rhetos/Rhetos).
+Rhetos.Jobs.Hangfire is a DSL package (a plugin module) for [Rhetos development platform](https://github.com/Rhetos/Rhetos).
 It provides an implementation of asynchronous Action execution.
 
 Contents:
@@ -38,7 +38,7 @@ Configuration of the plugin is done in `rhetos-app.settings.json`, like this (al
         "QueuePollInterval": 0, //Value is in seconds. Default value is 0. For usage of the option see Hangfire documentation.
         "UseRecommendedIsolationLevel": true, //Default value is true. For usage of the option see Hangfire documentation.
         "DisableGlobalLocks": true, //Default value is true. For usage of the option see Hangfire documentation.
-        "WorkerCount": 20, //Default value is min value of Environment.ProcessorCount and 20. For usage of the option see Hangfire documentation.
+        "WorkerCount": 2, //Default value is 2. For usage of the option see Hangfire documentation.
         "ShutdownTimeout": 15, //Value is in seconds. Default value is 15. For usage of the option see Hangfire documentation.
         "StopTimeout": 0, //Value is in seconds. Default value is 0. For usage of the option see Hangfire documentation.
         "SchedulePollingInterval": 15, //Value is in seconds. Default value is 15. For usage of the option see Hangfire documentation.
@@ -72,33 +72,34 @@ Here is an example:
 ```c
 Module Test
 {
-  Entity TheEntity
+  Entity SomeEntity
   {
     SaveMethod
     {
       AfterSave EnqueueAsyncExectuionOfSomething
-      '
-      {
-        var action = new Test.SyncSomething();
-        action.Ids = inserted.Select(x => new Guid?(x)).ToList();
-        _backgroundJob.EnqueueAction(action, true, true);
-      }';
-      
+        '{
+          foreach (var insertedItem in insertedNew)
+          {
+            var action = new Test.ProcessSomething { ItemId = insertedItem.Id };
+            _backgroundJob.EnqueueAction(action, executeInUserContext: false, optimizeDuplicates: true);
+          }
+        }';
     }
-    RepositoryUses '_backgroundJob' 'Rhetos.Jobs.IBackgroundJob, Rhetos.Jobs.Abstractions';
+    RepositoryUses _backgroundJob 'Rhetos.Jobs.IBackgroundJob, Rhetos.Jobs.Abstractions';
   }
   
-  Action SyncSomething '(parameters, repository, userInfo) =>
+  Action ProcessSomething '(parameters, repository, userInfo) =>
   {
-    // some syncing code goes here
+    // some code goes here
   }'
   {
-    ListOf Guid Ids;
+    Guid ItemId;
   }
 }
 ```
 
-Enqueued actions will be executed asynchronously, immediately after the transaction in which they were enqueued is closed. If the transaction is rolled back for any number of reasons, actions will not be enqueued and therefore not executed.
+Enqueued actions will be executed asynchronously, immediately after the transaction in which they were enqueued is closed.
+If the transaction is rolled back for any number of reasons, actions will not be enqueued and therefore not executed.
 
 ## Running job server in unit tests and CLI utilities
 
