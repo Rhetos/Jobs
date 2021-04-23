@@ -42,7 +42,7 @@ namespace Rhetos.Jobs
 		/// <param name="queue">
 		/// Name of the queue. Default is null.
 		/// </param>
-		void AddJob<TExecuter, TParameter>(TParameter parameter, bool executeInUserContext, object aggregationGroup, JobAggregator<TParameter> jobAggregator, string queue = null)
+		void AddJob<TExecuter, TParameter>(TParameter parameter, bool executeInUserContext, object aggregationGroup = null, JobAggregator<TParameter> jobAggregator = null, string queue = null)
 			where TExecuter : IJobExecuter<TParameter>;
 	}
 

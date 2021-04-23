@@ -48,7 +48,8 @@ namespace Rhetos.Jobs.Hangfire
         }
 
         /// <summary>
-        /// Create a new instance of Hangfire BackgroundJobServer with application-specific configuration.
+        /// Create a new instance of Hangfire <see cref="BackgroundJobServer"/>.
+        /// It uses application-specific configuration from <see cref="RhetosJobHangfireOptions"/> for <see cref="BackgroundJobServerOptions"/>.
         /// </summary>
         /// <remarks>
         /// The Hangfire BackgroundJobServer will start processing background jobs immediately.

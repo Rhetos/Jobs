@@ -56,47 +56,50 @@ namespace Rhetos.Jobs.Hangfire
 			_logger.Trace(() => $"Job enqueued in Hangfire.|{job.GetLogInfo()}");
 		}
 
-        public void AddJob<TExecuter, TParameter>(TParameter parameter, bool executeInUserContext, object aggregationGroup, JobAggregator<TParameter> jobAggregator, string queue = null)
+        public void AddJob<TExecuter, TParameter>(TParameter parameter, bool executeInUserContext, object aggregationGroup = null, JobAggregator<TParameter> jobAggregator = null, string queue = null)
 			where TExecuter : IJobExecuter<TParameter>
         {
 			_hangfireInitialization.InitializeGlobalConfiguration();
 
-			var job = new JobSchedule
+			var newJob = new Job<TParameter>
 			{
-				Job = new Job
-				{
-					Id = Guid.NewGuid(),
-					ExecuteAsUser = executeInUserContext ? _userInfo.UserName : null,
-					Parameter = parameter, // Might be updated later.
-				},
+				Id = Guid.NewGuid(),
+				ExecuteAsUser = executeInUserContext ? _userInfo.UserName : null,
+				Parameter = parameter, // Might be updated later.
+			};
+
+			var schedule = new JobSchedule
+			{
+				Job = newJob,
 				ExecuterType = typeof(TExecuter),
 				ParameterType = typeof(TParameter),
 				AggregationGroup = aggregationGroup,
 				EnqueueJob = null, // Will be set later.
 			};
 
-			_logger.Trace(() => $"Enqueuing job.|{job.GetLogInfo()}");
+			_logger.Trace(() => $"Enqueuing job.|{schedule.GetLogInfo()}");
 
 			if (aggregationGroup != null)
 			{
 				var lastJobIndex = _jobInstances.FindLastIndex(oldJob =>
-					job.ExecuterType == oldJob.ExecuterType
-					&& job.ParameterType == oldJob.ParameterType
-					&& job.Job.ExecuteAsUser == oldJob.Job.ExecuteAsUser
-					&& job.AggregationGroup.Equals(oldJob.AggregationGroup));
+					schedule.ExecuterType == oldJob.ExecuterType
+					&& schedule.ParameterType == oldJob.ParameterType
+					&& schedule.Job.ExecuteAsUser == oldJob.Job.ExecuteAsUser
+					&& schedule.AggregationGroup.Equals(oldJob.AggregationGroup));
 
 				if (lastJobIndex >= 0)
 				{
 					if (jobAggregator == null)
 						jobAggregator = DefaultAggregator;
 
-					bool removeOld = jobAggregator((TParameter)_jobInstances[lastJobIndex].Job.Parameter, ref parameter);
-					job.Job.Parameter = parameter;
+					var oldJob = (Job<TParameter>)_jobInstances[lastJobIndex].Job;
+					bool removeOld = jobAggregator(oldJob.Parameter, ref parameter);
+					newJob.Parameter = parameter;
 
 					if (removeOld)
 					{
 						_logger.Trace(() => $"Previous instance of the same job removed from queue." +
-							$"|New {job.GetLogInfo()}|Old {_jobInstances[lastJobIndex].GetLogInfo()}");
+							$"|New {schedule.GetLogInfo()}|Old {_jobInstances[lastJobIndex].GetLogInfo()}");
 						_jobInstances.RemoveAt(lastJobIndex);
 					}
 				}
@@ -105,23 +108,23 @@ namespace Rhetos.Jobs.Hangfire
 			if (string.IsNullOrWhiteSpace(queue) || queue.ToLower() == "default")
 			{
 				// Not enqueuing immediately to Hangfire, to allow later duplicate jobs to suppress the current one.
-				job.EnqueueJob = () => global::Hangfire.BackgroundJob.Enqueue<JobExecuter<TExecuter, TParameter>>(
-					executer => executer.ExecuteUnitOfWork(job.Job));
+				schedule.EnqueueJob = () => global::Hangfire.BackgroundJob.Enqueue<JobExecuter<TExecuter, TParameter>>(
+					executer => executer.ExecuteUnitOfWork(newJob));
 			}
 			else
 			{
 				// Not enqueuing immediately to Hangfire, to allow later duplicate jobs to suppress the current one.
 				// Only way to use specific queue is to use new instance of BackgroundJobClient and set specific EnqueuedState.
-				job.EnqueueJob = () =>
+				schedule.EnqueueJob = () =>
 				{
 					var client = new BackgroundJobClient();
 					var state = new EnqueuedState(queue.ToLower());
-					client.Create<JobExecuter<TExecuter, TParameter>>(e => e.ExecuteUnitOfWork(job.Job), state);
+					client.Create<JobExecuter<TExecuter, TParameter>>(e => e.ExecuteUnitOfWork(newJob), state);
 				};
 			}
 
-			_jobInstances.Add(job);
-			_logger.Trace(() => $"Job enqueued.|{job.GetLogInfo()}");
+			_jobInstances.Add(schedule);
+			_logger.Trace(() => $"Job enqueued.|{schedule.GetLogInfo()}");
 		}
 
 		/// <summary>

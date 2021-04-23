@@ -46,6 +46,7 @@
   <ItemGroup>
     <Compile Include="AutofacConfiguration.cs" />
     <Compile Include="BackgroundJob.cs" />
+    <Compile Include="IJob.cs" />
     <Compile Include="InternalExtensions.cs" />
     <Compile Include="Job.cs" />
     <Compile Include="JobExecuter.cs" />

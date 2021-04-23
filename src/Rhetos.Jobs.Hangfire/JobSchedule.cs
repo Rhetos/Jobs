@@ -7,7 +7,7 @@ namespace Rhetos.Jobs.Hangfire
     /// </summary>
     public class JobSchedule
 	{
-		public Job Job { get; set; }
+		public IJob Job { get; set; }
 		public Type ExecuterType { get; set; }
 		public Type ParameterType { get; set; }
 		public object AggregationGroup { get; set; }

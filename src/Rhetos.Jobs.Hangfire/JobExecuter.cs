@@ -22,7 +22,7 @@ namespace Rhetos.Jobs.Hangfire
 		/// <summary>
 		/// Executes the job in a new unit of work (in a separate transaction and a separate Rhetos DI scope).
 		/// </summary>
-		public void ExecuteUnitOfWork(Job job)
+		public void ExecuteUnitOfWork(Job<TParameter> job)
 		{
 			_logger.Trace(() => $"ExecuteJob started.|{job.GetLogInfo(typeof(TExecuter))}");
 			
@@ -40,7 +40,8 @@ namespace Rhetos.Jobs.Hangfire
 						return;
 					}
 
-					scope.Resolve<TExecuter>().Execute((TParameter)job.Parameter);
+					var jobExecuter = scope.Resolve<TExecuter>();
+					jobExecuter.Execute(job.Parameter);
 
 					DeleteJob(job.Id, sqlExecuter);
 					scope.CommitChanges();
