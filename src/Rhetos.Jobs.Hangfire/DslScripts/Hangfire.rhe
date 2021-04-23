@@ -1,4 +1,4 @@
-﻿Module RhetosJobs
+﻿Module Common
 {
 	Entity HangfireJob;
 }

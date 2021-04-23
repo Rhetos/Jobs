@@ -48,7 +48,7 @@ namespace Rhetos.Jobs.Hangfire
 		{
 			_logger.Trace(()=> $"Enqueuing job in Hangfire.|{job.GetLogInfo()}");
 
-			var commmand = $@"INSERT INTO RhetosJobs.HangfireJob (ID) VALUES('{job.Job.Id}')";
+			var commmand = $@"INSERT INTO Common.HangfireJob (ID) VALUES('{job.Job.Id}')";
 
 			_sqlExecuter.ExecuteSql(commmand);
 

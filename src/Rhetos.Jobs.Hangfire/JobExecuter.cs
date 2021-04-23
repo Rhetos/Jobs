@@ -58,7 +58,7 @@ namespace Rhetos.Jobs.Hangfire
 
 		private static bool JobExists(Guid jobId, ISqlExecuter sqlExecuter)
 		{
-			var command = $"SELECT COUNT(1) FROM RhetosJobs.HangfireJob WITH (READCOMMITTEDLOCK, ROWLOCK) WHERE ID = '{jobId}'";
+			var command = $"SELECT COUNT(1) FROM Common.HangfireJob WITH (READCOMMITTEDLOCK, ROWLOCK) WHERE ID = '{jobId}'";
 			var count = 0;
 
 			sqlExecuter.ExecuteReader(command, reader => count = reader.GetInt32(0));
@@ -69,7 +69,7 @@ namespace Rhetos.Jobs.Hangfire
 
 		private static void DeleteJob(Guid jobId, ISqlExecuter sqlExecuter)
 		{
-			var command = $"DELETE FROM RhetosJobs.HangfireJob WHERE ID = '{jobId}'";
+			var command = $"DELETE FROM Common.HangfireJob WHERE ID = '{jobId}'";
 			sqlExecuter.ExecuteSql(command);
 		}
 
