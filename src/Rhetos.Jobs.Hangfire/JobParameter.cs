@@ -21,11 +21,20 @@ using System;
 
 namespace Rhetos.Jobs.Hangfire
 {
-    internal interface IJob
-    {
-        Guid Id { get; }
-        string ExecuteAsUser { get; }
+    /// <summary>
+    /// Job parameters required for job execution.
+    /// It is serialized to the job queue storage before executing it.
+    /// </summary>
+    internal class JobParameter<TParameter> : IJobParameter
+	{
+		public Guid Id { get; set; }
+		public string ExecuteAsUser { get; set; }
+		public TParameter Parameter { get; set; }
 
-        string GetLogInfo(Type executerType);
-    }
+		public string GetLogInfo(Type executerType)
+		{
+			var userInfo = string.IsNullOrWhiteSpace(ExecuteAsUser) ? "User not specified" : $"ExecuteInUserContext: {ExecuteAsUser}";
+			return $"JobId: {Id}|{userInfo}|{executerType}|{Parameter}";
+		}
+	}
 }

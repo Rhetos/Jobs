@@ -21,17 +21,11 @@ using System;
 
 namespace Rhetos.Jobs.Hangfire
 {
-    /// <summary>
-    /// Extended information on job, for job management before it is executed.
-    /// </summary>
-    internal class JobSchedule
-	{
-		public IJobParameter Job { get; set; }
-		public Type ExecuterType { get; set; }
-		public Type ParameterType { get; set; }
-		public object AggregationGroup { get; set; }
-		public Action EnqueueJob { get; set; }
+    internal interface IJobParameter
+    {
+        Guid Id { get; }
+        string ExecuteAsUser { get; }
 
-		public string GetLogInfo() => Job.GetLogInfo(ExecuterType);
-	}
+        string GetLogInfo(Type executerType);
+    }
 }

@@ -41,7 +41,7 @@ namespace Rhetos.Jobs.Hangfire
 		/// <summary>
 		/// Executes the job in a new unit of work (in a separate transaction and a separate Rhetos DI scope).
 		/// </summary>
-		public void ExecuteUnitOfWork(Job<TParameter> job)
+		public void ExecuteUnitOfWork(JobParameter<TParameter> job)
 		{
 			_logger.Trace(() => $"ExecuteJob started.|{job.GetLogInfo(typeof(TExecuter))}");
 			

@@ -80,7 +80,7 @@ namespace Rhetos.Jobs.Hangfire
         {
 			_hangfireInitialization.InitializeGlobalConfiguration();
 
-			var newJob = new Job<TParameter>
+			var newJob = new JobParameter<TParameter>
 			{
 				Id = Guid.NewGuid(),
 				ExecuteAsUser = executeInUserContext ? _userInfo.UserName : null,
@@ -111,7 +111,7 @@ namespace Rhetos.Jobs.Hangfire
 					if (jobAggregator == null)
 						jobAggregator = DefaultAggregator;
 
-					var oldJob = (Job<TParameter>)_jobInstances[lastJobIndex].Job;
+					var oldJob = (JobParameter<TParameter>)_jobInstances[lastJobIndex].Job;
 					bool removeOld = jobAggregator(oldJob.Parameter, ref parameter);
 					newJob.Parameter = parameter;
 
