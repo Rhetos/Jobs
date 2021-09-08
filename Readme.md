@@ -25,7 +25,7 @@ and make sure the NuGet package location is listed in the *RhetosPackageSources.
 
 Configuration of the plugin is done in `rhetos-app.settings.json`, like this (all parameters are optional):
 
-```json
+```js
 {
   "Rhetos": {
     "Jobs": {
