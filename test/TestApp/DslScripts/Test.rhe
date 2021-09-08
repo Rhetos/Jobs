@@ -1,0 +1,35 @@
+﻿Module Test
+{
+	Entity SomeEntity
+	{
+		ShortString Code { AutoCode; }
+		ShortString Name;
+
+		SaveMethod
+		{
+			AfterSave EnqueueLongJob
+				'
+					_backgroundJobs.AddJob<TestApp.LongRunningJobExecuter, int>(15, executeInUserContext: false);
+				';
+
+			AfterSave EnqueueAsyncExectionOfSomething
+				'{
+					foreach (var insertedItem in insertedNew)
+					{
+						var action = new Test.ProcessSomething { ItemId = insertedItem.ID };
+						_backgroundJobs.EnqueueAction(action, executeInUserContext: false, optimizeDuplicates: true);
+					}
+				}';
+		}
+
+		RepositoryUses _backgroundJobs 'Rhetos.Jobs.IBackgroundJobs, Rhetos.Jobs.Abstractions';
+	}
+  
+	Action ProcessSomething '(parameters, repository, userInfo) =>
+		{
+			// some code goes here
+		}'
+	{
+		Guid ItemId;
+	}
+}
