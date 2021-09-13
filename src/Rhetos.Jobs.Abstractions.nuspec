@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
   <metadata>
     <id>Rhetos.Jobs.Abstractions</id>
-    <version>1.1.0-dev</version>
+    <version>5.0.0-dev</version>
     <authors>Omega software</authors>
     <owners>Omega software</owners>
     <projectUrl>https://github.com/rhetos/rhetos</projectUrl>
@@ -10,14 +10,17 @@
     <copyright>Copyright Omega software 2019</copyright>
     <tags>Rhetos plugin</tags>
     <releaseNotes>
-</releaseNotes>
+    </releaseNotes>
     <dependencies>
+      <dependency id="Rhetos" version="5.0.0-dev" />
+      <dependency id="Rhetos.CommonConcepts" version="5.0.0-dev" />
     </dependencies>
   </metadata>
   <files>
     <file src="..\Readme.md" target="" />
-    <file src="Rhetos.Jobs.Abstractions\bin\Debug\Rhetos.Jobs.Abstractions.dll" target="lib\net472" />
-    <file src="Rhetos.Jobs.Abstractions\bin\Debug\Rhetos.Jobs.Abstractions.pdb" target="lib\net472" />
-    <file src="Rhetos.Jobs.Abstractions\bin\Debug\Rhetos.Jobs.Abstractions.xml" target="lib\net472" />
+    <file src="..\ChangeLog.md" target="" />
+    <file src="Rhetos.Jobs.Abstractions\bin\Debug\net5.0\Rhetos.Jobs.Abstractions.dll" target="lib\net5.0" />
+    <file src="Rhetos.Jobs.Abstractions\bin\Debug\net5.0\Rhetos.Jobs.Abstractions.pdb" target="lib\net5.0" />
+    <file src="Rhetos.Jobs.Abstractions\bin\Debug\net5.0\Rhetos.Jobs.Abstractions.xml" target="lib\net5.0" />
   </files>
 </package>

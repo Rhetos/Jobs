@@ -29,22 +29,22 @@ namespace Rhetos.Jobs.Test
 		[TestMethod]
 		public void Happy()
 		{
-			using (var scope = RhetosProcessHelper.CreateScope())
+			using (var scope = TestScope.Create())
 			{
 				var repository = scope.Resolve<Common.DomRepository>();
 				repository.RhetosJobs.Happy.Execute(new Happy());
-				scope.CommitChanges();
+				scope.CommitAndClose();
 			}
 		}
 
 		[TestMethod]
 		public void HappyWithWait()
 		{
-			using (var scope = RhetosProcessHelper.CreateScope())
+			using (var scope = TestScope.Create())
 			{
 				var repository = scope.Resolve<Common.DomRepository>();
 				repository.RhetosJobs.HappyWithWait.Execute(new HappyWithWait());
-				scope.CommitChanges();
+				scope.CommitAndClose();
 			}
 		}
 	}

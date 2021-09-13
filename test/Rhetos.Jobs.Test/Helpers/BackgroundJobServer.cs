@@ -31,29 +31,16 @@ using System.Threading.Tasks;
 namespace Rhetos.Jobs.Test
 {
     [TestClass]
-    public static class HangfireJobsTestInfrastructure
+    public static class BackgroundJobServer
     {
-        /// <summary>
-        /// In a standard application, all IService plugins are initialized on startup from RhetosRuntime.cs.
-        /// In unit tests we need to manually initialize the RhetosJobsService.
-        /// </summary>
+        ///// <summary>
+        ///// In a standard application, Hangfire job server is started in Startup.Configure methods by calling app.UseRhetosHangfireServer().
+        ///// In unit tests we need to manually initialize the RhetosJobsService and start the server.
+        ///// </summary>
         [AssemblyInitialize]
         public static void HangfireJobsServiceInitialize(TestContext _)
         {
-            var containerField = typeof(ProcessContainer).GetField("_rhetosIocContainer", BindingFlags.NonPublic | BindingFlags.Instance);
-            var container = (Lazy<IContainer>)containerField.GetValue(RhetosProcessHelper.ProcessContainer);
-
-            RhetosJobServer.ConfigureHangfireJobServers(container.Value);
-            BackgroundJobServer = new BackgroundJobServer(new BackgroundJobServerOptions { ServerName =  Environment.MachineName + " unit tests" });
-        }
-
-        public static BackgroundJobServer BackgroundJobServer;
-
-        public static IConfigurationBuilder SetHangfireTestConfiguration(this IConfigurationBuilder configBuilder)
-        {
-            // Setting SlidingInvisibilityTimeout to quickly evaluate any jobs that were not executed immediately after enqueuing.
-            configBuilder.AddKeyValue("Rhetos:Jobs:Hangfire:SlidingInvisibilityTimeout", 1);
-            return configBuilder;
+            TestScope.RhetosHost.UseRhetosHangfireServer();
         }
 
         /// <summary>
@@ -68,6 +55,7 @@ namespace Rhetos.Jobs.Test
         public static void ShutdownHangfire()
         {
             RhetosHangfireHelper.WaitForJobsToComplete(null);
+            TestScope.RhetosHost.GetRootContainer().Resolve<AspNetJobServers>().ShutdownJobServers();
         }
     }
 }

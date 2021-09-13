@@ -5,25 +5,39 @@ It provides an implementation of asynchronous Action execution.
 
 Contents:
 
-1. [Installation and configuration](#installation-and-configuration)
-2. [Usage](#usage)
-3. [Running job server in unit tests and CLI utilities](#running-job-server-in-unit-tests-and-cli-utilities)
-4. [Troubleshooting](#troubleshooting)
+1. [Installation](#installation)
+2. [Configuration](#configuration)
+3. [Adding Hangfire Dashboard UI](#adding-hangfire-dashboard-ui)
+4. [Usage](#usage)
+5. [Running job server in unit tests and CLI utilities](#running-job-server-in-unit-tests-and-cli-utilities)
+6. [Troubleshooting](#troubleshooting)
    1. [ThreadAbortException](#threadabortexception)
 
 See [rhetos.org](http://www.rhetos.org/) for more information on Rhetos.
 
-## Installation and configuration
+## Installation
 
-To install this package to a Rhetos server, add it to the Rhetos server's *RhetosPackages.config* file
-and make sure the NuGet package location is listed in the *RhetosPackageSources.config* file.
+Installing this package to a Rhetos web application:
 
-* The package ID is "**Rhetos.Jobs.Hangfire**".
-  This package is available at the [NuGet.org](https://www.nuget.org/) online gallery.
-  The Rhetos server can install the package directly from there, if the gallery is listed in *RhetosPackageSources.config* file.
-* For more information, see [Installing plugin packages](https://github.com/Rhetos/Rhetos/wiki/Installing-plugin-packages).
+1. Add "Rhetos.Jobs.Hangfire" NuGet package, available at the [NuGet.org](https://www.nuget.org/) on-line gallery.
+2. In `Startup.ConfigureServices` method, extend the Rhetos services configuration (at `services.AddRhetosHost`) with: `.AddJobsHangfire()`
 
-Configuration of the plugin is done in `rhetos-app.settings.json`, like this (all parameters are optional):
+The steps above are enough for creating background jobs in the current application.
+For executing background jobs there are two options: jobs can be executed in the current
+application's process, or in a separate application (for example, a Windows service).
+
+If you want to run the background jobs in the **current web application**:
+
+1. In `Startup.Configure` method, add `app.UseRhetosHangfireServer(); // Start background job processing.`
+2. If running the application on IIS, follow the instructions in section
+   [Making ASP.NET Core application always running on IIS](https://docs.hangfire.io/en/latest/deployment-to-production/making-aspnet-app-always-running.html#making-asp-net-core-application-always-running-on-iis).
+
+To run the background jobs in a **separate application**, see instructions below
+in section [Running job server in unit tests and CLI utilities](#running-job-server-in-unit-tests-and-cli-utilities).
+
+## Configuration
+
+Configuration of the plugin is done in `appsettings.json`, like in the following example (all parameters are optional).
 
 ```js
 {
@@ -52,9 +66,10 @@ Configuration of the plugin is done in `rhetos-app.settings.json`, like this (al
 }
 ```
 
-For applications with Global.asax (Rhetos v4), suppress the OWIN startup issue by adding
-`<add key="owin:AutomaticAppStartup" value="false"/>` inside `appSettings` element in *Web.config* file.
-See Hangfire documentation for more info in this issue: [Using Global.asax.cs file](https://docs.hangfire.io/en/latest/getting-started/aspnet-applications.html#using-global-asax-cs-file).
+## Adding Hangfire Dashboard UI
+
+See "Adding Dashboard UI" in Hangfire documentation:
+<https://docs.hangfire.io/en/latest/getting-started/aspnet-core-applications.html#adding-dashboard-ui>
 
 ## Usage
 
@@ -76,7 +91,7 @@ Module Test
   {
     SaveMethod
     {
-      AfterSave EnqueueAsyncExectuionOfSomething
+      AfterSave EnqueueAsyncExecutionOfSomething
         '{
           foreach (var insertedItem in insertedNew)
           {
@@ -103,10 +118,59 @@ If the transaction is rolled back for any number of reasons, actions will not be
 
 ## Running job server in unit tests and CLI utilities
 
+To run the background jobs in separate application
+that uses the Rhetos app's context and configuration:
+
+```cs
+TODO: test this code.
+var rhetosHost = services.GetRequiredService<RhetosHost>();
+RhetosJobServer.Initialize(rhetosHost);
+
+var rhetosJobServer = rhetosHost.GetRootContainer().Resolve<RhetosJobServer>();
+using (var jobServer = rhetosJobServer.CreateHangfireJobServer())
+{
+    Console.WriteLine("Running a Hangfire job server.");
+    Console.WriteLine("Press any key to stop the application.");
+    Console.ReadKey(true);
+}
+```
+
+
+* CreateHangfireJobServer supports parameter for configuring Hangfire.BackgroundJobServerOptions.
+  The options are initialized from app settings (see RhetosJobHangfireOptions), and can be modified
+  by this delegate.
+* As an alternative to `rhetosJobServer.CreateHangfireJobServer`, you can create Hangfire.BackgroundJobServer
+  directly, without automatically reading BackgroundJobServerOptions from app settings.
+
+```cs
+using (var jobServer = new BackgroundJobServer(new BackgroundJobServerOptions()))
+{
+    Console.WriteLine("Running a Hangfire job server.");
+    Console.WriteLine("Press any key to stop the application.");
+    Console.ReadKey(true);
+}
+```
+
+```cs
+TODO: test this code.
+TODO: create an instance of the referenced Rhetos application's IHost and bind BackgroundJobServerOptions serverOptions from IHost.
+
+using (var jobServer = new BackgroundJobServer(serverOptions))
+{
+    Console.WriteLine("Running a Hangfire job server.");
+    Console.WriteLine("Press any key to stop the application.");
+    Console.ReadKey(true);
+}
+```
+
+
+TODO:
+--- OLD:
+
 Hangfire job server is automatically started by Rhetos.Jobs.Hangfire in a Rhetos web application.
 
 If you need to run the jobs processing server from another application that references the main Rhetos application's binaries,
-call `RhetosJobServer.ConfigureHangfireJobServers` method at the application initialization,
+call `RhetosJobServer.Initialize` method at the application initialization,
 then call `RhetosJobServer.CreateHangfireJobServer()` to create a Hangfire job server.
 The Hangfire job server will start processing background jobs immediately.
 
@@ -117,7 +181,8 @@ static BackgroundJobServer BackgroundJobServer = CreateJobServer();
 
 static BackgroundJobServer CreateJobServer()
 {
-    RhetosJobServer.ConfigureHangfireJobServers(GetRootContainer(), builder => builder.RegisterType<TestJobExecuter>());
+    TODO: Update documentation to match new methods.
+    RhetosJobServer.Initialize(GetRootContainer(), builder => builder.RegisterType<TestJobExecuter>());
     return RhetosJobServer.CreateHangfireJobServer();
 }
 

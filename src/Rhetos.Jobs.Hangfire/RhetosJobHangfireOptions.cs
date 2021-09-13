@@ -17,24 +17,33 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using System;
+using Hangfire;
+using Hangfire.SqlServer;
 
 namespace Rhetos.Jobs.Hangfire
 {
-	/// <summary>
-	/// Rhetos.Jobs.Hangfire configuration settings
-	/// </summary>
-	[Options("Rhetos:Jobs:Hangfire")]
+    /// <summary>
+    /// Rhetos.Jobs.Hangfire configuration settings.
+    /// It includes settings from <see cref="BackgroundJobServerOptions"/> and <see cref="SqlServerStorageOptions"/>.
+    /// </summary>
+    [Options("Rhetos:Jobs:Hangfire")]
 	public class RhetosJobHangfireOptions
 	{
 		/// <summary>
 		/// If true Hangfire server will be initialized in Rhetos web application. Default value is true.
 		/// </summary>
+		/// <remarks>
+		/// This options can be used to disable the Hangfire server initialization from a custom utility
+		/// that uses Rhetos app's context, but does not want to run the background jobs.
+		/// </remarks>
 		public bool InitializeHangfireServer { get; set; } = true;
+
 		/// <summary>
 		/// UserName under which enqueued actions will be executed if action is not enqueued with executeInUserContext=true. If ommited then UserName of the account of the app pool user will be used.
 		/// </summary>
 		public string ProcessUserName { get; set; }
+
+		#region Options from Hangfire.SqlServer.SqlServerStorageOptions
 
 		/// <summary>
 		/// Value is in seconds. Default value is 300. For usage of the option see Hangfire documentation.
@@ -61,12 +70,16 @@ namespace Rhetos.Jobs.Hangfire
 		/// </summary>
 		public bool DisableGlobalLocks { get; set; } = true;
 
-		/// <summary>
-		/// Default value for WorkerCount should be 1 or 2 for common Rhetos applications,
-		/// to avoid overloading the database, since the processing bottleneck is usually in the database.
-		/// For usage of the option see Hangfire documentation.
-		/// </summary>
-		public int WorkerCount { get; set; } = 2;
+		#endregion
+
+        #region Options from Hangfire.BackgroundJobServerOptions
+
+        /// <summary>
+        /// Default value for WorkerCount should be 1 or 2 for common Rhetos applications,
+        /// to avoid overloading the database, since the processing bottleneck is usually in the database.
+        /// For usage of the option see Hangfire documentation.
+        /// </summary>
+        public int WorkerCount { get; set; } = 2;
 		/// <summary>
 		/// Value is in seconds. Default value is 15. For usage of the option see Hangfire documentation.
 		/// </summary>
@@ -99,5 +112,7 @@ namespace Rhetos.Jobs.Hangfire
 		/// Array of queue names which will be processed by this instance of Hangfire server. Default is '["default"]'.
 		/// </summary>
 		public string[] Queues { get; set; } = {"default"};
-	}
+
+		#endregion
+    }
 }

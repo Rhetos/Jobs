@@ -1,27 +1,29 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
-VisualStudioVersion = 16.0.29324.140
+VisualStudioVersion = 16.0.31613.86
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rhetos.Jobs.Abstractions", "src\Rhetos.Jobs.Abstractions\Rhetos.Jobs.Abstractions.csproj", "{8979D9C0-A6AA-4806-8C00-43CC687A94D1}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rhetos.Jobs.Hangfire", "src\Rhetos.Jobs.Hangfire\Rhetos.Jobs.Hangfire.csproj", "{FD3DB242-2463-47A1-B50A-B621A79493B0}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestApp", "test\TestApp\TestApp.csproj", "{8E22738A-4342-4B13-A16D-380C50B9A477}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{4C5394A3-F136-49F4-AA6D-97913784263B}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{01B4D797-F972-4A10-89C5-3DE6EC7D74B3}"
 	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
 		.gitignore = .gitignore
 		Build.bat = Build.bat
 		Tools\Build\ChangeVersion.ps1 = Tools\Build\ChangeVersion.ps1
 		Clean.bat = Clean.bat
+		Directory.Build.props = Directory.Build.props
 		Readme.md = Readme.md
 		src\Rhetos.Jobs.Abstractions.nuspec = src\Rhetos.Jobs.Abstractions.nuspec
 		src\Rhetos.Jobs.Hangfire.nuspec = src\Rhetos.Jobs.Hangfire.nuspec
 		Test.bat = Test.bat
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rhetos.Jobs.Test", "test\Rhetos.Jobs.Test\Rhetos.Jobs.Test.csproj", "{B52BD822-6272-4A3E-9601-26EBFAB25FAA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rhetos.Jobs.Abstractions", "src\Rhetos.Jobs.Abstractions\Rhetos.Jobs.Abstractions.csproj", "{F0F84D85-FFC8-4501-98EF-042B8832DBA2}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rhetos.Jobs.Hangfire", "src\Rhetos.Jobs.Hangfire\Rhetos.Jobs.Hangfire.csproj", "{2D9DCA8D-020C-430F-B7B0-2A3562B61E52}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestApp", "test\TestApp\TestApp.csproj", "{27055B70-4AFE-46E3-9B62-639060ED2B3D}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rhetos.Jobs.Test", "test\Rhetos.Jobs.Test\Rhetos.Jobs.Test.csproj", "{52FEE8FA-A1BF-42B6-9E1A-8275B636CC89}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -29,27 +31,27 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{8979D9C0-A6AA-4806-8C00-43CC687A94D1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8979D9C0-A6AA-4806-8C00-43CC687A94D1}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{8979D9C0-A6AA-4806-8C00-43CC687A94D1}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{8979D9C0-A6AA-4806-8C00-43CC687A94D1}.Release|Any CPU.Build.0 = Release|Any CPU
-		{FD3DB242-2463-47A1-B50A-B621A79493B0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{FD3DB242-2463-47A1-B50A-B621A79493B0}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{FD3DB242-2463-47A1-B50A-B621A79493B0}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{FD3DB242-2463-47A1-B50A-B621A79493B0}.Release|Any CPU.Build.0 = Release|Any CPU
-		{8E22738A-4342-4B13-A16D-380C50B9A477}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8E22738A-4342-4B13-A16D-380C50B9A477}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{8E22738A-4342-4B13-A16D-380C50B9A477}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{8E22738A-4342-4B13-A16D-380C50B9A477}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B52BD822-6272-4A3E-9601-26EBFAB25FAA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B52BD822-6272-4A3E-9601-26EBFAB25FAA}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B52BD822-6272-4A3E-9601-26EBFAB25FAA}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B52BD822-6272-4A3E-9601-26EBFAB25FAA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F0F84D85-FFC8-4501-98EF-042B8832DBA2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F0F84D85-FFC8-4501-98EF-042B8832DBA2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F0F84D85-FFC8-4501-98EF-042B8832DBA2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F0F84D85-FFC8-4501-98EF-042B8832DBA2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2D9DCA8D-020C-430F-B7B0-2A3562B61E52}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2D9DCA8D-020C-430F-B7B0-2A3562B61E52}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2D9DCA8D-020C-430F-B7B0-2A3562B61E52}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2D9DCA8D-020C-430F-B7B0-2A3562B61E52}.Release|Any CPU.Build.0 = Release|Any CPU
+		{27055B70-4AFE-46E3-9B62-639060ED2B3D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{27055B70-4AFE-46E3-9B62-639060ED2B3D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{27055B70-4AFE-46E3-9B62-639060ED2B3D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{27055B70-4AFE-46E3-9B62-639060ED2B3D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{52FEE8FA-A1BF-42B6-9E1A-8275B636CC89}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{52FEE8FA-A1BF-42B6-9E1A-8275B636CC89}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{52FEE8FA-A1BF-42B6-9E1A-8275B636CC89}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{52FEE8FA-A1BF-42B6-9E1A-8275B636CC89}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {20527460-27C6-41A0-AB31-55D870B68911}
+		SolutionGuid = {8B6E34C2-5956-4DA2-9410-5DAA3EA385AB}
 	EndGlobalSection
 EndGlobal

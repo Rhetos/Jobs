@@ -60,7 +60,7 @@ static BackgroundJobServer BackgroundJobServer = CreateJobServer();
 
 static BackgroundJobServer CreateJobServer()
 {
-    RhetosJobServer.ConfigureHangfireJobServers(GetRootContainer(), builder => builder.RegisterType<TestJobExecuter>());
+    RhetosJobServer.Initialize(GetRootContainer(), builder => builder.RegisterType<TestJobExecuter>());
     return RhetosJobServer.CreateHangfireJobServer(); // We can create new BackgroundJobServer directly, instead of calling CreateHangfireJobServer, if a custom job configuration is needed.
 }
 

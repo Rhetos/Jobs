@@ -29,7 +29,7 @@ using System.Threading.Tasks;
 
 namespace Rhetos.Jobs.Test
 {
-    public static class ContainerBuilderExtensions
+    public static class TestScopeExtensions
     {
         public static ContainerBuilder AddLogMonitor(this ContainerBuilder builder, List<string> log, EventType minLevel = EventType.Trace)
         {

@@ -25,6 +25,11 @@ using System;
 
 namespace Rhetos.Jobs.Hangfire
 {
+	/// <summary>
+	/// This class is a job that is executed by Hangfire.
+	/// </summary>
+	/// <typeparam name="TExecuter"></typeparam>
+	/// <typeparam name="TParameter"></typeparam>
     internal class RhetosExecutionContext<TExecuter, TParameter>
 		where TExecuter : IJobExecuter<TParameter>
 	{
@@ -63,7 +68,7 @@ namespace Rhetos.Jobs.Hangfire
 					jobExecuter.Execute(job.Parameter);
 
 					DeleteJob(job.Id, sqlExecuter);
-					scope.CommitChanges();
+					scope.CommitAndClose();
 				}
 			}
 			catch (Exception exception)

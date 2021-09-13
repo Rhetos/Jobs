@@ -59,7 +59,7 @@ namespace Rhetos.Jobs.Test
 		public void ExecuteInUserContext()
 		{
 			DateTime testStart;
-			using (var scope = RhetosProcessHelper.CreateScope())
+			using (var scope = TestScope.Create())
 				testStart = SqlUtility.GetDatabaseTime(scope.Resolve<ISqlExecuter>());
 
 			var actions = new List<(object ActionParameter, bool ExecuteInUserContext, bool OptimizeDuplicates)>
@@ -79,7 +79,7 @@ namespace Rhetos.Jobs.Test
 
 			var dbLog = new List<(string ContextInfo, string ActionData)>();
 			string systemUserReport;
-			using (var scope = RhetosProcessHelper.CreateScope())
+			using (var scope = TestScope.Create())
 			{
 				var sql =
 					$@"SELECT ContextInfo, Description

@@ -22,7 +22,7 @@ using System;
 namespace Rhetos.Jobs
 {
     /// <summary>
-    /// Background job execution service API.
+    /// API for creating background jobs.
     /// </summary>
     public interface IBackgroundJobs
 	{

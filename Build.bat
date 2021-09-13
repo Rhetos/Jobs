@@ -1,18 +1,19 @@
 SETLOCAL
-SET Version=1.1.0
+SET Version=5.0.0
 SET Prerelease=auto
 
-CALL Tools\Build\FindVisualStudio.bat || GOTO Error0
+@SET Config=%1%
+@IF [%1] == [] SET Config=Debug
 
-REM Updating the build version of all projects.
+REM Updating the build version.
 PowerShell -ExecutionPolicy ByPass .\Tools\Build\ChangeVersion.ps1 %Version% %Prerelease% || GOTO Error0
 
-WHERE /Q NuGet.exe || ECHO ERROR: Please download the NuGet.exe command line tool. && GOTO Error0
-NuGet restore Rhetos.Jobs.sln -NonInteractive || GOTO Error0
-MSBuild Rhetos.Jobs.sln /target:rebuild /p:Configuration=Debug /p:RhetosDeploy=false /verbosity:minimal /fileLogger || GOTO Error0
+dotnet build Rhetos.Jobs.sln --configuration %Config% -p:RhetosDeploy=false || GOTO Error0
 
 IF NOT EXIST Install MD Install
 DEL /F /S /Q Install\* || GOTO Error0
+
+WHERE /Q NuGet.exe || ECHO ERROR: Please download the NuGet.exe command line tool. && GOTO Error0
 NuGet pack .\src\Rhetos.Jobs.Abstractions.nuspec -OutputDirectory Install || GOTO Error0
 NuGet pack .\src\Rhetos.Jobs.Hangfire.nuspec -OutputDirectory Install || GOTO Error0
 

@@ -1,11 +1,10 @@
 SETLOCAL
-CALL Tools\Build\FindVisualStudio.bat || GOTO Error0
 
-REM Deploying test application for integration tests:
-test\TestApp\bin\rhetos.exe dbupdate || GOTO Error0
+@REM Assuming Build.bat has completed successfully.
+test\TestApp\bin\Debug\net5.0\rhetos.exe dbupdate test\TestApp\bin\Debug\net5.0\TestApp.dll
 
-REM Running integration tests:
-vstest.console.exe test\Rhetos.Jobs.Test\bin\Debug\Rhetos.Jobs.Test.dll || GOTO Error0
+@REM Using "no-build" option as optimization, because Test.bat should always be executed after Build.bat.
+dotnet test Rhetos.Jobs.sln --no-build || GOTO Error0
 
 @REM ================================================
 
@@ -16,5 +15,4 @@ vstest.console.exe test\Rhetos.Jobs.Test\bin\Debug\Rhetos.Jobs.Test.dll || GOTO 
 :Error0
 @ECHO.
 @ECHO %~nx0 FAILED.
-@IF /I [%2] NEQ [/NOPAUSE] @PAUSE
 @EXIT /B 1

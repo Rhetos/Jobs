@@ -40,7 +40,7 @@ namespace Rhetos.Jobs.Test
         {
             var rhetosJobIds = new List<Guid>();
             var log = new List<string>();
-            using (var scope = RhetosProcessHelper.CreateScope(builder => builder
+            using (var scope = TestScope.Create(builder => builder
                 .AddLogMonitor(log)
                 .AddFakeUser(JobsCreatedByUser)))
             {
@@ -55,7 +55,7 @@ namespace Rhetos.Jobs.Test
                 if (rhetosJobIds.Distinct().Count() != actions.Count)
                     throw new InvalidOperationException("Error in test setup, cannot detect all job IDs.");
 
-                scope.CommitChanges();
+                scope.CommitAndClose();
             }
             return rhetosJobIds;
         }
@@ -76,7 +76,7 @@ namespace Rhetos.Jobs.Test
         public static Dictionary<Guid, long> ReadCreatedJobsFromDatabase(List<Guid> rhetosJobIds)
         {
             var hangfireJobIdByRhetosJobId = new Dictionary<Guid, long>();
-            using (var scope = RhetosProcessHelper.CreateScope())
+            using (var scope = TestScope.Create())
             {
                 var sqlExecuter = scope.Resolve<ISqlExecuter>();
                 foreach (Guid rhetosJobId in rhetosJobIds)
@@ -95,7 +95,7 @@ namespace Rhetos.Jobs.Test
             while (true)
             {
                 var currentJobs = new List<string>();
-                using (var scope = RhetosProcessHelper.CreateScope())
+                using (var scope = TestScope.Create())
                 {
                     string sql = "SELECT Id, StateName FROM HangFire.Job WHERE ExpireAt IS NULL"
                         + (hangfireJobIds != null ? $" AND Id IN ({string.Join(", ", hangfireJobIds)})" : "");

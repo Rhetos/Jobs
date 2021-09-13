@@ -24,6 +24,7 @@ namespace Rhetos.Jobs.Hangfire
     internal interface IJobParameter
     {
         Guid Id { get; }
+
         string ExecuteAsUser { get; }
 
         string GetLogInfo(Type executerType);
