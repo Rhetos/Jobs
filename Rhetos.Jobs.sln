@@ -8,6 +8,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.editorconfig = .editorconfig
 		.gitignore = .gitignore
 		Build.bat = Build.bat
+		ChangeLog.md = ChangeLog.md
 		Tools\Build\ChangeVersion.ps1 = Tools\Build\ChangeVersion.ps1
 		Clean.bat = Clean.bat
 		Directory.Build.props = Directory.Build.props

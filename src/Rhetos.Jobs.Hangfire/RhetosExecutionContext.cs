@@ -35,12 +35,14 @@ namespace Rhetos.Jobs.Hangfire
 	{
 		private readonly ILogger _logger;
 		private readonly RhetosJobHangfireOptions _options;
+        private readonly IUnitOfWorkFactory _unitOfWorkFactory;
 
-        public RhetosExecutionContext(ILogProvider logProvider, RhetosJobHangfireOptions options)
+        public RhetosExecutionContext(ILogProvider logProvider, RhetosJobHangfireOptions options, IUnitOfWorkFactory unitOfWorkFactory)
 		{
 			// Note: The constructor parameters are resolved from the root DI container (set in UseAutofacActivator call in RhetosJobsService class).
 			_logger = logProvider.GetLogger(InternalExtensions.LoggerName);
 			_options = options;
+            _unitOfWorkFactory = unitOfWorkFactory;
         }
 
 		/// <summary>
@@ -52,7 +54,7 @@ namespace Rhetos.Jobs.Hangfire
 			
 			try
 			{
-				using (var scope = RhetosJobServer.CreateScope(builder => CustomizeScope(builder, job.ExecuteAsUser)))
+				using (var scope = _unitOfWorkFactory.CreateScope(builder => CustomizeScope(builder, job.ExecuteAsUser)))
 				{
 					_logger.Trace(() => $"ExecuteJob TransactionScopeContainer initialized.|{job.GetLogInfo(typeof(TExecuter))}");
 

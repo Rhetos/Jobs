@@ -18,15 +18,8 @@
 */
 
 using Autofac;
-using Hangfire;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Rhetos.Jobs.Hangfire;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Rhetos.Jobs.Test
 {
@@ -55,7 +48,7 @@ namespace Rhetos.Jobs.Test
         public static void ShutdownHangfire()
         {
             RhetosHangfireHelper.WaitForJobsToComplete(null);
-            TestScope.RhetosHost.GetRootContainer().Resolve<AspNetJobServers>().ShutdownJobServers();
+            TestScope.RhetosHost.GetRootContainer().Resolve<JobServersCollection>().ShutdownJobServers();
         }
     }
 }

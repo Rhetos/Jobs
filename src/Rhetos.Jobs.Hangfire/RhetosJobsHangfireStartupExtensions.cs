@@ -37,7 +37,7 @@ namespace Rhetos
         /// Adds required Rhetos components for creating background jobs, and background jobs processing.
         /// </summary>
         /// <remarks>
-        /// To start processing background jobs in a current application, call <see cref="UseRhetosHangfireServer"/> 
+        /// To start processing background jobs in a current application, call <see cref="UseRhetosHangfireServer(IApplicationBuilder)"/> 
         /// </remarks>
         public static RhetosServiceCollectionBuilder AddJobsHangfire(this RhetosServiceCollectionBuilder builder)
         {
@@ -49,8 +49,8 @@ namespace Rhetos
                         containerBuilder.RegisterType<BackgroundJobs>().As<IBackgroundJobs>().InstancePerLifetimeScope();
                         containerBuilder.RegisterGeneric(typeof(RhetosExecutionContext<,>)).InstancePerLifetimeScope();
                         containerBuilder.RegisterType<RhetosHangfireInitialization>().SingleInstance();
-                        containerBuilder.RegisterType<RhetosJobServer>().SingleInstance();
-                        containerBuilder.RegisterType<AspNetJobServers>().SingleInstance();
+                        containerBuilder.RegisterType<RhetosJobServerFactory>().SingleInstance();
+                        containerBuilder.RegisterType<JobServersCollection>().SingleInstance();
                     }));
 
             return builder;
@@ -64,10 +64,15 @@ namespace Rhetos
         /// It uses app settings from <see cref="RhetosJobHangfireOptions"/> for <see cref="BackgroundJobServerOptions"/>.
         /// The Hangfire BackgroundJobServer will start processing background jobs immediately.
         /// </remarks>
-        public static IApplicationBuilder UseRhetosHangfireServer(this IApplicationBuilder applicationBuilder)
+        /// <param name="configureOptions">
+        /// Use this parameter to run multiple background job servers with different Hangfire options.
+        /// If not provided, one background job server will be started with default settings.
+        /// The Action may be null for any background job server; it uses app setting for <see cref="RhetosJobHangfireOptions"/> by default,
+        /// </param>
+        public static IApplicationBuilder UseRhetosHangfireServer(this IApplicationBuilder applicationBuilder, params Action<BackgroundJobServerOptions>[] configureOptions)
         {
             var rhetosHost = applicationBuilder.ApplicationServices.GetRequiredService<RhetosHost>();
-            UseRhetosHangfireServer(rhetosHost);
+            UseRhetosHangfireServer(rhetosHost, configureOptions);
             return applicationBuilder;
         }
 
@@ -79,12 +84,23 @@ namespace Rhetos
         /// It uses app settings from <see cref="RhetosJobHangfireOptions"/> for <see cref="BackgroundJobServerOptions"/>.
         /// The created <see cref="BackgroundJobServer"/> will start processing background jobs immediately.
         /// </remarks>
-        public static void UseRhetosHangfireServer(this RhetosHost rhetosHost)
+        /// <param name="configureOptions">
+        /// Use this parameter to run multiple background job servers with different Hangfire options.
+        /// If not provided, one background job server will be started with default settings.
+        /// The Action may be null for any background job server; it uses app setting for <see cref="RhetosJobHangfireOptions"/> by default,
+        /// </param>
+        public static void UseRhetosHangfireServer(this RhetosHost rhetosHost, params Action<BackgroundJobServerOptions>[] configureOptions)
         {
-            RhetosJobServer.Initialize(rhetosHost);
+            GlobalConfiguration.Configuration.UseAutofacActivator(rhetosHost.GetRootContainer());
 
-            var jobServers = rhetosHost.GetRootContainer().Resolve<AspNetJobServers>();
-            jobServers.CreateJobServer();
+            if (configureOptions.Length == 0)
+                configureOptions = new Action<BackgroundJobServerOptions>[] { null };
+
+            foreach (var configure in configureOptions)
+            {
+                var jobServers = rhetosHost.GetRootContainer().Resolve<JobServersCollection>();
+                jobServers.CreateJobServer(configure);
+            }
         }
     }
 }

@@ -31,13 +31,13 @@ namespace Rhetos.Jobs.Hangfire
     /// in order to stop them on dispose.
     /// </summary>
     /// <remarks>
-    /// In other processes, for example CLI utilities or unit tests, instead of this class, use <see cref="RhetosJobServer"/> directly to create
-    /// the Hangfire <see cref="BackgroundJobServer"/>, in order to start job processing in the current application.
+    /// For manual control over Hangfire job server lifetime, use <see cref="RhetosJobServerFactory"/> instead.
+    /// For simpler usage in web apps, see <see cref="RhetosJobsHangfireStartupExtensions.UseRhetosHangfireServer(Microsoft.AspNetCore.Builder.IApplicationBuilder)"/> instead.
     /// </remarks>
-    public class AspNetJobServers : IDisposable
+    public class JobServersCollection : IDisposable
     {
         private readonly RhetosJobHangfireOptions _options;
-        private readonly RhetosJobServer _rhetosJobServer;
+        private readonly RhetosJobServerFactory _rhetosJobServerFactory;
         private readonly ILogger _logger;
         private bool disposed;
 
@@ -46,10 +46,10 @@ namespace Rhetos.Jobs.Hangfire
         /// </summary>
         public ConcurrentBag<BackgroundJobServer> Servers { get; private set; } = new();
 
-        public AspNetJobServers(RhetosJobHangfireOptions options, RhetosJobServer rhetosJobServer, ILogProvider logProvider)
+        public JobServersCollection(RhetosJobHangfireOptions options, RhetosJobServerFactory rhetosJobServerFactory, ILogProvider logProvider)
         {
             _options = options;
-            _rhetosJobServer = rhetosJobServer;
+            _rhetosJobServerFactory = rhetosJobServerFactory;
             _logger = logProvider.GetLogger(GetType().Name);
         }
 
@@ -58,15 +58,18 @@ namespace Rhetos.Jobs.Hangfire
         /// and registers it for disposal when Rhetos DI closes.
         /// </summary>
         /// <remarks>
-        /// Before creating job servers, initialize global settings with <see cref="RhetosJobServer.Initialize"/>.
-        /// The Hangfire job server will not be created if <see cref="RhetosJobHangfireOptions.InitializeHangfireServer"/>
+        /// The Hangfire job server will not be created if option <see cref="RhetosJobHangfireOptions.InitializeHangfireServer"/>
         /// is set to <see langword="false"/>.
+        /// <para>
+        /// Before creating job server, the Hangfire's GlobalConfiguration must be configured to use Rhetos host DI container,
+        /// by calling <code>GlobalConfiguration.Configuration.UseAutofacActivator(rhetosHost.GetRootContainer());</code>
+        /// </para>
         /// </remarks>
-        public void CreateJobServer()
+        public void CreateJobServer(Action<BackgroundJobServerOptions> configureOptions = null)
         {
             if (_options.InitializeHangfireServer)
             {
-                var jobServer = _rhetosJobServer.CreateHangfireJobServer();
+                var jobServer = _rhetosJobServerFactory.CreateHangfireJobServer(configureOptions);
                 Servers.Add(jobServer);
             }
         }

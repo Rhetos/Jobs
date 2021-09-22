@@ -5,4 +5,6 @@
 ### Breaking changes
 
 1. Migrated from .NET Framework to .NET 5 and Rhetos 5.
-2. Renamed `RhetosJobServer.ConfigureHangfireJobServers` to `RhetosJobServer.Initialize`.
+2. Removed method `RhetosJobServer.ConfigureHangfireJobServers`.
+   See [Readme.md](Readme.md) for new setup instructions.
+3. Renamed class `RhetosJobServer` to `RhetosJobServerFactory`.

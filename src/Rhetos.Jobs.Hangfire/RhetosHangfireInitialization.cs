@@ -43,7 +43,8 @@ namespace Rhetos.Jobs.Hangfire
 		}
 
 		/// <summary>
-		/// Initializes Hangfire's global configuration, if not initialized already.
+		/// Initializes Hangfire's global configuration, if not initialized already,
+		/// required for both the components that enqueue jobs and the Hangfire job server that processes the jobs.
 		/// </summary>
 		/// <remarks>
 		/// Call this method before using Hangfire to create background jobs in a CLI utility or unit tests.

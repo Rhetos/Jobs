@@ -123,11 +123,11 @@ that uses the Rhetos app's context and configuration:
 
 ```cs
 TODO: test this code.
-var rhetosHost = services.GetRequiredService<RhetosHost>();
-RhetosJobServer.Initialize(rhetosHost);
 
-var rhetosJobServer = rhetosHost.GetRootContainer().Resolve<RhetosJobServer>();
-using (var jobServer = rhetosJobServer.CreateHangfireJobServer())
+var rhetosHost = services.GetRequiredService<RhetosHost>();
+GlobalConfiguration.Configuration.UseAutofacActivator(rhetosHost.GetRootContainer());
+var rhetosJobServerFactory = rhetosHost.GetRootContainer().Resolve<RhetosJobServerFactory>();
+using (var jobServer = rhetosJobServerFactory.CreateHangfireJobServer())
 {
     Console.WriteLine("Running a Hangfire job server.");
     Console.WriteLine("Press any key to stop the application.");
@@ -139,7 +139,7 @@ using (var jobServer = rhetosJobServer.CreateHangfireJobServer())
 * CreateHangfireJobServer supports parameter for configuring Hangfire.BackgroundJobServerOptions.
   The options are initialized from app settings (see RhetosJobHangfireOptions), and can be modified
   by this delegate.
-* As an alternative to `rhetosJobServer.CreateHangfireJobServer`, you can create Hangfire.BackgroundJobServer
+* As an alternative to `rhetosJobServerFactory.CreateHangfireJobServer`, you can create Hangfire.BackgroundJobServer
   directly, without automatically reading BackgroundJobServerOptions from app settings.
 
 ```cs
@@ -170,8 +170,8 @@ TODO:
 Hangfire job server is automatically started by Rhetos.Jobs.Hangfire in a Rhetos web application.
 
 If you need to run the jobs processing server from another application that references the main Rhetos application's binaries,
-call `RhetosJobServer.Initialize` method at the application initialization,
-then call `RhetosJobServer.CreateHangfireJobServer()` to create a Hangfire job server.
+call `RhetosJobServerFactory.Initialize` method at the application initialization,
+then call `RhetosJobServerFactory.CreateHangfireJobServer()` to create a Hangfire job server.
 The Hangfire job server will start processing background jobs immediately.
 
 For example, if you need to run background jobs in a **LINQPad script**, add the following code to the script.
@@ -182,8 +182,8 @@ static BackgroundJobServer BackgroundJobServer = CreateJobServer();
 static BackgroundJobServer CreateJobServer()
 {
     TODO: Update documentation to match new methods.
-    RhetosJobServer.Initialize(GetRootContainer(), builder => builder.RegisterType<TestJobExecuter>());
-    return RhetosJobServer.CreateHangfireJobServer();
+    RhetosJobServerFactory.Initialize(GetRootContainer(), builder => builder.RegisterType<TestJobExecuter>());
+    return RhetosJobServerFactory.CreateHangfireJobServer();
 }
 
 static IContainer GetRootContainer()
