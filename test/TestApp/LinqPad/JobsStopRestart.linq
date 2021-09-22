@@ -66,46 +66,59 @@
   <Namespace>Rhetos.Jobs.Hangfire</Namespace>
 </Query>
 
-//// This static instance of the BackgroundJobServer will keep executing the background jobs even after
-//// the LINQPad script finished, until the LINQPad process is closed (Menu: Query => Cancel All Threads and Reset).
-//static BackgroundJobServer BackgroundJobServer = CreateJobServer();
+
+// ISSUE: Sometimes the LINQPad process needs to be restared to avoid exception:
+//[Error] RhetosJobs: ExecuteJob exception: Autofac.Core.Registration.ComponentNotRegisteredException: The requested service 'TestJobExecuter' has not been registered. To avoid this exception, either register a component to provide the service, check for service registration using IsRegistered(), or use the ResolveOptional() method to resolve an optional dependency.
+//   at Autofac.ResolutionExtensions.ResolveService(IComponentContext context, Service service, IEnumerable`1 parameters) in /_/src/Autofac/ResolutionExtensions.cs:line 878
+//   at Autofac.ResolutionExtensions.Resolve(IComponentContext context, Type serviceType, IEnumerable`1 parameters) in /_/src/Autofac/ResolutionExtensions.cs:line 342
+//   at Autofac.ResolutionExtensions.Resolve[TService](IComponentContext context, IEnumerable`1 parameters) in /_/src/Autofac/ResolutionExtensions.cs:line 294
+//   at Autofac.ResolutionExtensions.Resolve[TService](IComponentContext context) in /_/src/Autofac/ResolutionExtensions.cs:line 277
+//   at Rhetos.UnitOfWorkScope.Resolve[T]()
+//   at Rhetos.Jobs.Hangfire.RhetosExecutionContext`2.ExecuteUnitOfWork(JobParameter`1 job)
 
 void Main()
 {
 	ConsoleLogger.MinLevel = EventType.Trace; // Use EventType.Trace for more detailed log.
 	string rhetosAppPath = Path.Combine(Path.GetDirectoryName(Util.CurrentQueryPath), @"..\bin\debug\net5.0\TestApp.dll");
-	using (var rhetosHost = RhetosHost.CreateFrom(rhetosAppPath, ConfigureRhetosHostForConsole))
+	using (var rhetosHost = RhetosHost.CreateFrom(rhetosAppPath, ConfigureRhetosHost))
 	{
 		// Testing if application and database work:
 		using (var scope = rhetosHost.CreateScope(cb => cb.RegisterType<ProcessUserInfo>().As<IUserInfo>()))
 		{
 			scope.Resolve<IUserInfo>().Report().Dump();
-			scope.Resolve<Common.DomRepository>().Common.Claim.Query().ToSimple().Take(3).Dump();
+			scope.Resolve<Common.DomRepository>().Common.Claim.Query().Count().Dump();
 		}
 
 		// Create Hangfire jobs server:
 		GlobalConfiguration.Configuration.UseAutofacActivator(rhetosHost.GetRootContainer());
 		var rhetosJobServerFactory = rhetosHost.GetRootContainer().Resolve<RhetosJobServerFactory>();
-		using (var jobServer = rhetosJobServerFactory.CreateHangfireJobServer())
+		using (var hangfireJobServer = rhetosJobServerFactory.CreateHangfireJobServer())
 		{
 			Console.WriteLine("Running a Hangfire job server.");
 			
-			Test();
+			//Test(rhetosHost, hangfireJobServer);
 			
-			Console.WriteLine("Press any key to stop the application.");
-			Console.Read();
+			Test2(rhetosHost, hangfireJobServer); // Do not run after Test(). Not compatible.
+
+			Console.WriteLine("Stopping the Hangfire job server.");
+			Log("===========  Stopping the Hangfire job server ===========");
 		}
+		Log("===========  HANGFIRE JOB SERVER DISPOSED ===========");
 	}
+	Log("===========  RHETOS HOST DISPOSED ===========");
 }
 
-private static void ConfigureRhetosHostForConsole(IRhetosHostBuilder rhetosHostBuilder)
+private static void ConfigureRhetosHost(IRhetosHostBuilder rhetosHostBuilder)
 {
 	rhetosHostBuilder
 		.UseBuilderLogProvider(new ConsoleLogProvider())
 		.ConfigureContainer(containerBuilder =>
 		{
+			// Console:
 			containerBuilder.RegisterType<ProcessUserInfo>().As<IUserInfo>();
 			containerBuilder.RegisterType<ConsoleLogProvider>().As<ILogProvider>();
+			// Test job executer:
+			containerBuilder.RegisterType<TestJobExecuter>();
 		});
 }
 
@@ -113,9 +126,12 @@ class TestJobExecuter : IJobExecuter<object>
 {
 	public void Execute(object parameter)
 	{
-		Log($"[TestJobExecuter] {parameter}");
-		Thread.Sleep(1000);
-		Log($"[TestJobExecuter DONE] {parameter}");
+		Log($"[TestJobExecuter] {parameter.GetType()} {parameter}");
+		if (parameter is long ms)
+			Thread.Sleep((int)ms);
+		else
+			Thread.Sleep(1000);
+		Log($"[TestJobExecuter DONE] {parameter.GetType()} {parameter}");
 	}
 }
 
@@ -124,33 +140,58 @@ public static void Log(string message)
 	Console.WriteLine($"{DateTime.Now:o} {message}");
 }
 
-void Test()
+void Test2(RhetosHost rhetosHost, BackgroundJobServer hangfireJobServer)
 {
-	ConsoleLogger.MinLevel = EventType.Trace;
+	using (var scope = rhetosHost.CreateScope())
+	{
+		var backgroundJobs = scope.Resolve<IBackgroundJobs>();
+		Log("===========  ADD JOB ===========");
+		backgroundJobs.AddJob<TestJobExecuter, object>(20_000, false, null, null);
+		scope.CommitAndClose();
+	}
+	Log("===========  SCOPE DISPOSED ===========");
+	Thread.Sleep(100); // Wait enough for job to start, but not to finish.
 
-	ReportHangfireDatabaseJobs(-1).Dump("Existing jobs");
-	long lastJobId = GetHangfireDatabaseLastJobId();
+	Log("===========  HANGFIRE JOB SERVER DISPOSING ===========");
 
-	using (var scope = ProcessContainer.CreateTransactionScopeContainer(RhetosAppPath))
+	// Expected:
+	// Disposing of hangfireJobServer in Main() should take 15 seconds waiting for this job to complete
+	// see RhetosJobHangfireOptions.ShutdownTimeout.
+	// After that, and after rhetosHost is disposed in Main(), this job should run for 5 more seconds,
+	// then report an error in LINQPad output when trying to complete the transaction (UnitOfWorkScope.CommitAndClose)
+	// because the lifetime scope has already been disposed.
+}
+
+void Test(RhetosHost rhetosHost, BackgroundJobServer hangfireJobServer)
+{
+	Log("===========  INITIAL STATE ===========");
+	
+	rhetosHost.ReportHangfireDatabaseJobs(-1).Dump("Existing jobs");
+	long lastJobId = rhetosHost.GetHangfireDatabaseLastJobId();
+	Log($"lastJobId: {lastJobId}");
+	
+	Log("===========  ADD JOBS ===========");
+
+	using (var scope = rhetosHost.CreateScope())
 	{
 		var backgroundJobs = scope.Resolve<IBackgroundJobs>();
 
-		for (int i = 0; i < 5; i++) // By default 2 runs in parallel for each background server.
-			backgroundJobs.AddJob<TestJobExecuter, object>(i, false, null, null);
+		for (int i = 0; i < 5; i++) // By default 2 runs in parallel for each background server, see RhetosJobHangfireOptions.WorkerCount.
+			backgroundJobs.AddJob<TestJobExecuter, object>(i.ToString(), false, null, null);
 
-		scope.CommitChanges();
+		scope.CommitAndClose();
 	}
 
 	Thread.Sleep(100); // Wait enough for some jobs to start, but not to finish.
 
-	ReportHangfireDatabaseJobs(lastJobId).Dump("Initially started jobs"); // Expected: 2 processing (default worker count), 3 pending.
+	rhetosHost.ReportHangfireDatabaseJobs(lastJobId).Dump("Initially started jobs"); // Expected: 2 processing (default worker count), 3 pending.
 
 	Log("===========  STOPPING ===========");
+	
+	hangfireJobServer.SendStop();
+	hangfireJobServer.Dispose(); // Waits some time for running jobs to finish.
 
-	BackgroundJobServer.SendStop();
-	BackgroundJobServer.Dispose(); // Waits some time for running jobs to finish.
-
-	ReportHangfireDatabaseJobs(lastJobId).Dump("After waiting for job server to stop"); // Expected: 2 completed, 3 pending.
+	rhetosHost.ReportHangfireDatabaseJobs(lastJobId).Dump("After waiting for job server to stop"); // Expected: 2 completed, 3 pending.
 
 	Log("===========  STOPPED ===========");
 
@@ -158,55 +199,60 @@ void Test()
 
 	Log("===========  ADD JOB ===========");
 
-	using (var scope = ProcessContainer.CreateTransactionScopeContainer(RhetosAppPath))
+	using (var scope = rhetosHost.CreateScope())
 	{
 		var backgroundJobs = scope.Resolve<IBackgroundJobs>();
 
-		backgroundJobs.AddJob<TestJobExecuter, object>(-1, false, null, null);
+		backgroundJobs.AddJob<TestJobExecuter, object>(123, false, null, null);
 
-		scope.CommitChanges();
+		scope.CommitAndClose();
 	}
 
 	Thread.Sleep(10000);
 
-	ReportHangfireDatabaseJobs(lastJobId).Dump("New job added. Background workers still stopped."); // Expected: 2 completed, 4 pending.
+	rhetosHost.ReportHangfireDatabaseJobs(lastJobId).Dump("New job added. Background workers still stopped."); // Expected: 2 completed, 4 pending.
 
 	Log("===========  RESTARTING ===========");
 
-	BackgroundJobServer = RhetosJobServerFactory.CreateHangfireJobServer();
+	var jobServerFactory = rhetosHost.GetRootContainer().Resolve<RhetosJobServerFactory>();
+	using (var jobServer2 = jobServerFactory.CreateHangfireJobServer())
+	{
+		Thread.Sleep(10000);
 
-	Thread.Sleep(10000);
-
-	ReportHangfireDatabaseJobs(lastJobId).Dump("Background workers restarted."); // Expected: 6 completed.
+		rhetosHost.ReportHangfireDatabaseJobs(lastJobId).Dump("Background workers restarted."); // Expected: 6 completed.
+	}
 
 	Log("===========  DONE ===========");
 }
 
-public long GetHangfireDatabaseLastJobId()
+static class RhetosHostExtensions
 {
-	using (var scope = ProcessContainer.CreateTransactionScopeContainer(RhetosAppPath))
+	public static long GetHangfireDatabaseLastJobId(this RhetosHost rhetosHost)
 	{
-		string sql = "SELECT MAX(Id) FROM HangFire.Job WITH (nolock)";
-		long lastJobId = 0;
-		var sqlExecuter = scope.Resolve<ISqlExecuter>();
-		sqlExecuter.ExecuteReader(sql, reader => lastJobId = reader.IsDBNull(0) ? 0 : reader.GetInt64(0));
-		return lastJobId;
+		using (var scope = rhetosHost.CreateScope())
+		{
+			string sql = "SELECT MAX(Id) FROM HangFire.Job WITH (nolock)";
+			long lastJobId = 0;
+			var sqlExecuter = scope.Resolve<ISqlExecuter>();
+			sqlExecuter.ExecuteReader(sql, reader => lastJobId = reader.IsDBNull(0) ? 0 : reader.GetInt64(0));
+			return lastJobId;
+		}
 	}
-}
 
-public List<object> ReportHangfireDatabaseJobs(long lastJobId)
-{
-	using (var scope = ProcessContainer.CreateTransactionScopeContainer(RhetosAppPath))
+	public static List<object> ReportHangfireDatabaseJobs(this RhetosHost rhetosHost, long lastJobId)
 	{
-		string sql = $"SELECT StateName, COUNT(*) FROM HangFire.Job WITH (nolock) WHERE Id > {lastJobId} GROUP BY StateName";
-		var report = new List<object>();
-		var sqlExecuter = scope.Resolve<ISqlExecuter>();
-		sqlExecuter.ExecuteReader(sql,
-			reader => report.Add(new
-			{
-				StateName = reader.GetString(0),
-				Count = reader.GetInt32(1)
-			}));
-		return report;
+		using (var scope = rhetosHost.CreateScope())
+		{
+			string sql = $"SELECT StateName, COUNT(*) FROM HangFire.Job WITH (nolock) WHERE Id > {lastJobId} GROUP BY StateName";
+			var report = new List<object>();
+			var sqlExecuter = scope.Resolve<ISqlExecuter>();
+			sqlExecuter.ExecuteReader(sql,
+				reader => report.Add(new
+				{
+					StateName = reader.GetString(0),
+					Count = reader.GetInt32(1)
+				}));
+			return report;
+		}
 	}
 }
