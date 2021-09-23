@@ -60,6 +60,7 @@ namespace Rhetos.Jobs.Hangfire
 
             var hangfireOptions = new BackgroundJobServerOptions
             {
+                ServerName = $"{Environment.MachineName}.{AppDomain.CurrentDomain.FriendlyName}",
                 WorkerCount = _options.WorkerCount,
                 ShutdownTimeout = TimeSpan.FromSeconds(_options.ShutdownTimeout),
                 StopTimeout = TimeSpan.FromSeconds(_options.StopTimeout),

@@ -1,7 +1,7 @@
 # Rhetos.Jobs.Hangfire
 
-Rhetos.Jobs.Hangfire is a DSL package (a plugin module) for [Rhetos development platform](https://github.com/Rhetos/Rhetos).
-It provides an implementation of asynchronous Action execution.
+Rhetos.Jobs.Hangfire is a plugin package for [Rhetos development platform](https://github.com/Rhetos/Rhetos).
+It provides an implementation of asynchronous execution of background jobs.
 
 Contents:
 
@@ -22,17 +22,13 @@ Installing this package to a Rhetos web application:
 1. Add "Rhetos.Jobs.Hangfire" NuGet package, available at the [NuGet.org](https://www.nuget.org/) on-line gallery.
 2. In `Startup.ConfigureServices` method, extend the Rhetos services configuration (at `services.AddRhetosHost`) with: `.AddJobsHangfire()`
 
-The steps above are enough for creating background jobs in the current application.
-For executing background jobs there are two options: jobs can be executed in the current
-application's process, or in a separate application (for example, a Windows service).
-
-If you want to run the background jobs in the **current web application**:
+If you want to run the background jobs in the **Rhetos web application**:
 
 1. In `Startup.Configure` method, add `app.UseRhetosHangfireServer(); // Start background job processing.`
 2. If running the application on IIS, follow the instructions in section
    [Making ASP.NET Core application always running on IIS](https://docs.hangfire.io/en/latest/deployment-to-production/making-aspnet-app-always-running.html#making-asp-net-core-application-always-running-on-iis).
 
-To run the background jobs in a **separate application**, see instructions below
+If you want to run the background jobs in a **separate application**, see instructions below
 in section [Running job server in unit tests and CLI utilities](#running-job-server-in-unit-tests-and-cli-utilities).
 
 ## Configuration
@@ -118,89 +114,98 @@ If the transaction is rolled back for any number of reasons, actions will not be
 
 ## Running job server in unit tests and CLI utilities
 
-To run the background jobs in separate application
-that uses the Rhetos app's context and configuration:
+You can create a separate application to run the background jobs,
+for example a Windows service or a CLI utility,
+instead of running them directly in the Rhetos web application.
+These utility applications will use Rhetos app's context and configuration
+when executing the jobs.
+
+Creating a "job runner" utility for your project:
+
+1. Create the "job runner" console application and add a project reference to your Rhetos application.
+2. Add the following text in the csproj file to suppress Rhetos build tasks in the job runner:
+   ```xml
+   <PropertyGroup>
+     <RhetosBuild>false</RhetosBuild>
+     <RhetosDeploy>false</RhetosDeploy>
+   </PropertyGroup>
+   ```
+3. Add the following code as an example, modify as needed.
 
 ```cs
-TODO: test this code.
+using Autofac;
+using Hangfire;
+using Rhetos;
+using Rhetos.Jobs.Hangfire;
+using Rhetos.Logging;
+using Rhetos.Security;
+using Rhetos.Utilities;
+using System;
 
-var rhetosHost = services.GetRequiredService<RhetosHost>();
-GlobalConfiguration.Configuration.UseAutofacActivator(rhetosHost.GetRootContainer());
-var rhetosJobServerFactory = rhetosHost.GetRootContainer().Resolve<RhetosJobServerFactory>();
-using (var jobServer = rhetosJobServerFactory.CreateHangfireJobServer())
+namespace JobRunner
 {
-    Console.WriteLine("Running a Hangfire job server.");
-    Console.WriteLine("Press any key to stop the application.");
-    Console.ReadKey(true);
+    /// <summary>
+    /// This is a CLI utility for running background job separately for the Rhetos web app.
+    /// </summary>
+    class Program
+    {
+        static int Main(string[] args)
+        {
+            if (args.Length != 1)
+            {
+                Console.WriteLine("Missing command-line argument: path to the Rhetos app assembly");
+                Console.WriteLine();
+                Console.WriteLine("Usage:");
+                Console.WriteLine("JobRunner.exe <path to the Rhetos app assembly>");
+                return 1;
+            }
+            // First command=line argument is a relative path to the Rhetos application's assembly, for example "Bookstore.dll"
+            string rhetosAppPath = args[0];
+            ConsoleLogger.MinLevel = EventType.Trace; // Use EventType.Info for less detailed log output.
+            using (var rhetosHost = RhetosHost.CreateFrom(rhetosAppPath, ConfigureRhetosHostForConsoleApp))
+            {
+                string appName = typeof(Program).Assembly.GetName().Name;
+                var logger = rhetosHost.GetRootContainer().Resolve<ILogProvider>().GetLogger(appName);
+                // Configure Hangfire to use Rhetos IoC container:
+                GlobalConfiguration.Configuration.UseAutofacActivator(rhetosHost.GetRootContainer());
+                // RhetosJobServerFactory will use Hangfire configuration from the Rhetos app:
+                var rhetosJobServerFactory = rhetosHost.GetRootContainer().Resolve<RhetosJobServerFactory>();
+                // Create and start a Hangfire jobs server:
+                // Multiple servers may be created if needed, with different configurations, see CreateHangfireJobServer arguments.
+                using (var hangfireJobServer = rhetosJobServerFactory.CreateHangfireJobServer())
+                {
+                    logger.Info("Started a Hangfire job server.");
+                    Console.WriteLine("Press any key to stop the application.");
+                    Console.ReadKey(true);
+                    logger.Info("Stopping the Hangfire job server.");
+                }
+                logger.Info("Stopped the Hangfire job server.");
+            }
+            return 0;
+        }
+
+        private static void ConfigureRhetosHostForConsoleApp(IRhetosHostBuilder rhetosHostBuilder)
+        {
+            rhetosHostBuilder
+              .UseBuilderLogProvider(new ConsoleLogProvider())
+              .ConfigureContainer(containerBuilder =>
+              {
+                  containerBuilder.RegisterType<ProcessUserInfo>().As<IUserInfo>();
+                  containerBuilder.RegisterType<ConsoleLogProvider>().As<ILogProvider>();
+              });
+        }
+    }
 }
 ```
 
+Remarks:
 
 * CreateHangfireJobServer supports parameter for configuring Hangfire.BackgroundJobServerOptions.
   The options are initialized from app settings (see RhetosJobHangfireOptions), and can be modified
   by this delegate.
-* As an alternative to `rhetosJobServerFactory.CreateHangfireJobServer`, you can create Hangfire.BackgroundJobServer
+* As an alternative to `rhetosJobServerFactory.CreateHangfireJobServer`, you can create and configure Hangfire.BackgroundJobServer
   directly, without automatically reading BackgroundJobServerOptions from app settings.
-
-```cs
-using (var jobServer = new BackgroundJobServer(new BackgroundJobServerOptions()))
-{
-    Console.WriteLine("Running a Hangfire job server.");
-    Console.WriteLine("Press any key to stop the application.");
-    Console.ReadKey(true);
-}
-```
-
-```cs
-TODO: test this code.
-TODO: create an instance of the referenced Rhetos application's IHost and bind BackgroundJobServerOptions serverOptions from IHost.
-
-using (var jobServer = new BackgroundJobServer(serverOptions))
-{
-    Console.WriteLine("Running a Hangfire job server.");
-    Console.WriteLine("Press any key to stop the application.");
-    Console.ReadKey(true);
-}
-```
-
-
-TODO:
---- OLD:
-
-Hangfire job server is automatically started by Rhetos.Jobs.Hangfire in a Rhetos web application.
-
-If you need to run the jobs processing server from another application that references the main Rhetos application's binaries,
-call `RhetosJobServerFactory.Initialize` method at the application initialization,
-then call `RhetosJobServerFactory.CreateHangfireJobServer()` to create a Hangfire job server.
-The Hangfire job server will start processing background jobs immediately.
-
-For example, if you need to run background jobs in a **LINQPad script**, add the following code to the script.
-
-```cs
-static BackgroundJobServer BackgroundJobServer = CreateJobServer();
-
-static BackgroundJobServer CreateJobServer()
-{
-    TODO: Update documentation to match new methods.
-    RhetosJobServerFactory.Initialize(GetRootContainer(), builder => builder.RegisterType<TestJobExecuter>());
-    return RhetosJobServerFactory.CreateHangfireJobServer();
-}
-
-static IContainer GetRootContainer()
-{
-    string applicationFolder = Path.GetDirectoryName(Util.CurrentQueryPath); // Path to the Rhetos application, or any subfolder.
-    using (var scope = ProcessContainer.CreateTransactionScopeContainer(applicationFolder))
-    {
-        var processContainerField = typeof(ProcessContainer).GetField("_singleContainer", BindingFlags.NonPublic | BindingFlags.Static);
-        var processContainer = (ProcessContainer)processContainerField.GetValue(null);
-
-        var containerField = typeof(ProcessContainer).GetField("_rhetosIocContainer", BindingFlags.NonPublic | BindingFlags.Instance);
-        var container = (Lazy<IContainer>)containerField.GetValue(processContainer);
-
-        return container.Value;
-    }
-}
-```
+* You can test the job runner utility with LINQPad script that creates the jobs.
 
 ## Troubleshooting
 

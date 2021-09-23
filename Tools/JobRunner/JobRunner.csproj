@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net5.0</TargetFramework>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <RhetosBuild>false</RhetosBuild>
+    <RhetosDeploy>false</RhetosDeploy>
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\..\test\TestApp\TestApp.csproj" />
+  </ItemGroup>
+
+</Project>

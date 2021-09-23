@@ -37,7 +37,9 @@ namespace Rhetos
         /// Adds required Rhetos components for creating background jobs, and background jobs processing.
         /// </summary>
         /// <remarks>
-        /// To start processing background jobs in a current application, call <see cref="UseRhetosHangfireServer(IApplicationBuilder)"/> 
+        /// Calling this method is enough to allow creating background jobs in the current application.
+        /// To start processing background jobs in the current application, call <see cref="UseRhetosHangfireServer(IApplicationBuilder, Action{BackgroundJobServerOptions}[])"/>,
+        /// or use <see cref="RhetosJobServerFactory"/> to run the background jobs in a separate application.
         /// </remarks>
         public static RhetosServiceCollectionBuilder AddJobsHangfire(this RhetosServiceCollectionBuilder builder)
         {
