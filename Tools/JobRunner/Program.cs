@@ -12,7 +12,7 @@ namespace JobRunner
     /// <summary>
     /// This is a demo CLI utility for running background job separately for the Rhetos web app.
     /// </summary>
-    class Program
+    static class Program
     {
         static int Main(string[] args)
         {

@@ -33,8 +33,8 @@ namespace Rhetos.Jobs.Hangfire
 		private readonly ConnectionString _connectionString;
 		private readonly RhetosJobHangfireOptions _options;
 
-		private static bool _initialized = false;
-		private static readonly object _initializationLock = new object();
+		private static bool _initialized;
+		private static readonly object _initializationLock = new();
 
 		public RhetosHangfireInitialization(ConnectionString connectionString, RhetosJobHangfireOptions options)
 		{
@@ -69,8 +69,10 @@ namespace Rhetos.Jobs.Hangfire
 								DisableGlobalLocks = _options.DisableGlobalLocks
 							});
 
+#pragma warning disable S2696 // Instance members should not write to "static" fields. This is a standard double-checked locking.
 						_initialized = true;
-					}
+#pragma warning restore S2696 // Instance members should not write to "static" fields
+                    }
 		}
 	}
 }

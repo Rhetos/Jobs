@@ -8,3 +8,6 @@ dotnet_diagnostic.CS1591.severity = suggestion
 
 # CS1573: Parameter has no matching param tag in the XML comment (but other parameters do)
 dotnet_diagnostic.CS1573.severity = suggestion
+
+# CA1303: Do not pass literals as localized parameters
+dotnet_diagnostic.CA1303.severity = suggestion

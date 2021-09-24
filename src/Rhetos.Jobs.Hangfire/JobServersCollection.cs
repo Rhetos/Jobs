@@ -32,9 +32,11 @@ namespace Rhetos.Jobs.Hangfire
     /// </summary>
     /// <remarks>
     /// For manual control over Hangfire job server lifetime, use <see cref="RhetosJobServerFactory"/> instead.
-    /// For simpler usage in web apps, see <see cref="RhetosJobsHangfireStartupExtensions.UseRhetosHangfireServer(Microsoft.AspNetCore.Builder.IApplicationBuilder)"/> instead.
+    /// For simpler usage in web apps, see <see cref="RhetosJobsHangfireStartupExtensions.UseRhetosHangfireServer(Microsoft.AspNetCore.Builder.IApplicationBuilder, Action{BackgroundJobServerOptions}[])"/> instead.
     /// </remarks>
+#pragma warning disable CA1711 // Identifiers should not have incorrect suffix. JobServersCollection represents a "collection", but it uses composition instead of inheritance.
     public class JobServersCollection : IDisposable
+#pragma warning restore CA1711 // Identifiers should not have incorrect suffix
     {
         private readonly RhetosJobHangfireOptions _options;
         private readonly RhetosJobServerFactory _rhetosJobServerFactory;
@@ -120,7 +122,9 @@ namespace Rhetos.Jobs.Hangfire
                 {
                     server.SendStop();
                 }
+#pragma warning disable CA1031 // Do not catch general exception types. Ignoring possible issues if a server is already disposed on shutdown.
                 catch
+#pragma warning restore CA1031 // Do not catch general exception types
                 {
                     // Ignoring possible issues if any server is already disposed on shutdown.
                 }
@@ -131,7 +135,9 @@ namespace Rhetos.Jobs.Hangfire
                 {
                     server.Dispose();
                 }
+#pragma warning disable CA1031 // Do not catch general exception types. Ignoring possible issues if a server is already disposed on shutdown.
                 catch
+#pragma warning restore CA1031 // Do not catch general exception types
                 {
                     // Ignoring possible issues if any server is already disposed on shutdown.
                 }

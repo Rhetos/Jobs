@@ -19,6 +19,7 @@
 
 using Hangfire;
 using Hangfire.SqlServer;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Rhetos.Jobs.Hangfire
 {
@@ -27,6 +28,7 @@ namespace Rhetos.Jobs.Hangfire
     /// It includes settings from <see cref="BackgroundJobServerOptions"/> and <see cref="SqlServerStorageOptions"/>.
     /// </summary>
     [Options("Rhetos:Jobs:Hangfire")]
+	[SuppressMessage("Performance", "CA1805:Do not initialize unnecessarily", Justification = "Default options values are emphasized by setting them explicitly.")]
 	public class RhetosJobHangfireOptions
 	{
 		/// <summary>
@@ -39,7 +41,7 @@ namespace Rhetos.Jobs.Hangfire
 		public bool InitializeHangfireServer { get; set; } = true;
 
 		/// <summary>
-		/// UserName under which enqueued actions will be executed if action is not enqueued with executeInUserContext=true. If ommited then UserName of the account of the app pool user will be used.
+		/// UserName under which enqueued actions will be executed if action is not enqueued with executeInUserContext=true. If omitted then UserName of the account of the app pool user will be used.
 		/// </summary>
 		public string ProcessUserName { get; set; }
 
@@ -55,10 +57,11 @@ namespace Rhetos.Jobs.Hangfire
 		/// </summary>
 		public int SlidingInvisibilityTimeout { get; set; } = 300;
 
-		/// <summary>
-		/// Value is in seconds. Default value is 0. For usage of the option see Hangfire documentation.
-		/// </summary>
-		public int QueuePollInterval { get; set; } = 0;
+
+        /// <summary>
+        /// Value is in seconds. Default value is 0. For usage of the option see Hangfire documentation.
+        /// </summary>
+        public int QueuePollInterval { get; set; } = 0;
 
 		/// <summary>
 		/// Default value is true. For usage of the option see Hangfire documentation.
@@ -108,11 +111,13 @@ namespace Rhetos.Jobs.Hangfire
 		/// Value is in seconds. Default value is 5. For usage of the option see Hangfire documentation.
 		/// </summary>
 		public int CancellationCheckInterval { get; set; } = 5;
-		/// <summary>
-		/// Array of queue names which will be processed by this instance of Hangfire server. Default is '["default"]'.
-		/// </summary>
-		public string[] Queues { get; set; } = {"default"};
+        /// <summary>
+        /// Array of queue names which will be processed by this instance of Hangfire server. Default is '["default"]'.
+        /// </summary>
+#pragma warning disable CA1819 // Properties should not return arrays
+        public string[] Queues { get; set; } = { "default" };
+#pragma warning restore CA1819 // Properties should not return arrays
 
-		#endregion
+        #endregion
     }
 }

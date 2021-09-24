@@ -28,6 +28,9 @@ using System.Threading;
 
 namespace Rhetos.Jobs.Test
 {
+    /// <summary>
+    /// Helper methods for testing Hangfire jobs.
+    /// </summary>
     public static class RhetosHangfireHelper
 	{
         public static readonly IUserInfo JobsCreatedByUser = new TestUserInfo("TestJobsUser", "TestJobsMachine");
@@ -36,7 +39,9 @@ namespace Rhetos.Jobs.Test
         /// Resolves IBackgroundJobs from DI and adds the new job by calling <see cref="BackgroundJobExtensions.EnqueueAction"/>.
         /// Returns Rhetos job IDs for provided actions.
         /// </summary>
-        public static List<Guid> EnqueueActionJobs(List<(object ActionParameter, bool ExecuteInUserContext, bool OptimizeDuplicates)> actions)
+#pragma warning disable CA1002 // Do not expose generic lists
+        public static List<Guid> EnqueueActionJobs(ICollection<(object ActionParameter, bool ExecuteInUserContext, bool OptimizeDuplicates)> actions)
+#pragma warning restore CA1002 // Do not expose generic lists
         {
             var rhetosJobIds = new List<Guid>();
             var log = new List<string>();
@@ -63,7 +68,7 @@ namespace Rhetos.Jobs.Test
         private static Guid GetLastJobId(List<string> log)
         {
             // Example: "[Trace] RhetosJobs: Enqueuing job.|JobId: 9a98ab0e-709f-4250-8602-34a89aab1d3a|User not specified|Rhetos.Jobs.ActionJobExecuter|Action: RhetosJobs.SimpleAction|Parameters: {\"Name\":\"testA\",\"TestId\":null}"
-            string lastEntry = log.Last(entry => entry.Contains("RhetosJobs: Enqueuing job."));
+            string lastEntry = log.Last(entry => entry.Contains("RhetosJobs: Enqueuing job.", StringComparison.Ordinal));
             string jobId = _jobIdRegex.Match(lastEntry).Groups["guid"].Value;
             return Guid.Parse(jobId);
         }
@@ -73,7 +78,7 @@ namespace Rhetos.Jobs.Test
         /// <summary>
         /// Returns dictionary: key is "Guid RhetosJobId", value is "long HangfireJobId".
         /// </summary>
-        public static Dictionary<Guid, long> ReadCreatedJobsFromDatabase(List<Guid> rhetosJobIds)
+        public static Dictionary<Guid, long> ReadCreatedJobsFromDatabase(IReadOnlyCollection<Guid> rhetosJobIds)
         {
             var hangfireJobIdByRhetosJobId = new Dictionary<Guid, long>();
             using (var scope = TestScope.Create())
@@ -89,7 +94,7 @@ namespace Rhetos.Jobs.Test
             return hangfireJobIdByRhetosJobId;
         }
 
-        public static void WaitForJobsToComplete(List<long> hangfireJobIds)
+        public static void WaitForJobsToComplete(IReadOnlyCollection<long> hangfireJobIds)
         {
             var startTime = DateTime.Now;
             while (true)

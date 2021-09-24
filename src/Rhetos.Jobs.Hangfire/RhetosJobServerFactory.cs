@@ -27,7 +27,7 @@ namespace Rhetos.Jobs.Hangfire
     /// </summary>
     /// <remarks>
     /// This class is intended for direct control over Hangfire job server lifetime in unit tests, CLI utilities or Windows services.
-    /// For simpler usage alternative see <see cref="JobServersCollection"/> or <see cref="RhetosJobsHangfireStartupExtensions.UseRhetosHangfireServer(Microsoft.AspNetCore.Builder.IApplicationBuilder)"/>.
+    /// For simpler usage alternative see <see cref="JobServersCollection"/> or <see cref="RhetosJobsHangfireStartupExtensions.UseRhetosHangfireServer(Microsoft.AspNetCore.Builder.IApplicationBuilder, Action{BackgroundJobServerOptions}[])"/>.
     /// </remarks>
     public class RhetosJobServerFactory
     {

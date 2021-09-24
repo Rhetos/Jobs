@@ -29,9 +29,12 @@ using System.Threading.Tasks;
 
 namespace Rhetos.Jobs.Test
 {
+    /// <summary>
+    /// Helper methods for configuring the DI container scope withing a context of a unit test.
+    /// </summary>
     public static class TestScopeExtensions
     {
-        public static ContainerBuilder AddLogMonitor(this ContainerBuilder builder, List<string> log, EventType minLevel = EventType.Trace)
+        public static ContainerBuilder AddLogMonitor(this ContainerBuilder builder, ICollection<string> log, EventType minLevel = EventType.Trace)
         {
             builder.RegisterInstance(new ConsoleLogProvider((eventType, eventName, message) =>
             {

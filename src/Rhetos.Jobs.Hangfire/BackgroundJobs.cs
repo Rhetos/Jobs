@@ -28,7 +28,10 @@ using Hangfire.States;
 
 namespace Rhetos.Jobs.Hangfire
 {
-    public class BackgroundJobs : IBackgroundJobs
+	/// <summary>
+	/// Implementation of IBackgroundJobs that uses Hangfire to schedule the jobs.
+	/// </summary>
+	public class BackgroundJobs : IBackgroundJobs
 	{
 		private readonly ISqlExecuter _sqlExecuter;
 		private readonly IUserInfo _userInfo;
@@ -36,7 +39,7 @@ namespace Rhetos.Jobs.Hangfire
         private readonly ILogger _logger;
 		private readonly ILogger _performanceLogger;
 
-		private readonly List<JobSchedule> _jobInstances = new List<JobSchedule>();
+		private readonly List<JobSchedule> _jobInstances = new();
 
 		public BackgroundJobs(
 			ILogProvider logProvider,
@@ -124,8 +127,10 @@ namespace Rhetos.Jobs.Hangfire
 				}
 			}
 
-			if (string.IsNullOrWhiteSpace(queue) || queue.ToLower() == "default")
-			{
+#pragma warning disable CA1308 // Normalize strings to uppercase. Hangfire's convention is to use lowercase for queue names.
+			if (string.IsNullOrWhiteSpace(queue) || queue.ToLowerInvariant() == "default")
+#pragma warning restore CA1308 // Normalize strings to uppercase
+            {
 				// Not enqueuing immediately to Hangfire, to allow later duplicate jobs to suppress the current one.
 				schedule.EnqueueJob = () => global::Hangfire.BackgroundJob.Enqueue<RhetosExecutionContext<TExecuter, TParameter>>(
 					context => context.ExecuteUnitOfWork(newJob));
@@ -137,8 +142,10 @@ namespace Rhetos.Jobs.Hangfire
 				schedule.EnqueueJob = () =>
 				{
 					var client = new BackgroundJobClient();
-					var state = new EnqueuedState(queue.ToLower());
-					client.Create<RhetosExecutionContext<TExecuter, TParameter>>(context => context.ExecuteUnitOfWork(newJob), state);
+#pragma warning disable CA1308 // Normalize strings to uppercase. Hangfire's convention is to use lowercase for queue names.
+					var state = new EnqueuedState(queue.ToLowerInvariant());
+#pragma warning restore CA1308 // Normalize strings to uppercase
+                    client.Create<RhetosExecutionContext<TExecuter, TParameter>>(context => context.ExecuteUnitOfWork(newJob), state);
 				};
 			}
 
