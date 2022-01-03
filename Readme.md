@@ -1,7 +1,7 @@
 This repository contains two Rhetos plugins packages for asynchronous execution of background jobs:
 
-1. **Rhetos.Jobs.Abstractions**, that provides interfaces for asynchronous operations
-2. **Rhetos.Jobs.Hangfire**, an implementation option using Hangfire library
+1. **Rhetos.Jobs.Abstractions** - interfaces for asynchronous operations.
+2. **Rhetos.Jobs.Hangfire** - an implementation option using Hangfire library.
 
 # Rhetos.Jobs.Abstractions
 
@@ -11,9 +11,9 @@ This packages should be referenced in Rhetos plugins that require asynchronous e
 
 This package contains:
 
-* Rhetos.Jobs.IBackgroundJobs - Creates a new background job that will be executed after the current transaction is completed.
-* Rhetos.Jobs.IJobExecuter - Implement this interface to add a custom background job type.
-  * Rhetos.Jobs.ActionJobExecuter - Generic job executer for background jobs that are implemented as a DSL Action.
+* Interface *IBackgroundJobs* - Creates a new background job that will be executed after the current transaction is completed.
+* Interface *IJobExecuter* - Implement this interface to add a custom background job type.
+  * Implementation *ActionJobExecuter* - Generic job executer for background jobs that are developed as a DSL Action.
 
 # Rhetos.Jobs.Hangfire
 
