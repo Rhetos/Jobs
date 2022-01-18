@@ -47,6 +47,7 @@
     <Compile Include="Helpers\HangfireJobsTestInfrastructure.cs" />
     <Compile Include="Helpers\RhetosProcessHelper.cs" />
     <Compile Include="ActionJobExecuterTest.cs" />
+    <Compile Include="RecurringJobsTest.cs" />
     <Compile Include="UnitTest1.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

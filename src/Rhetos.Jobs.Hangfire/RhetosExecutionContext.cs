@@ -18,6 +18,7 @@
 */
 
 using Autofac;
+using Hangfire;
 using Rhetos.Logging;
 using Rhetos.Security;
 using Rhetos.Utilities;
@@ -51,18 +52,27 @@ namespace Rhetos.Jobs.Hangfire
 				{
 					_logger.Trace(() => $"ExecuteJob TransactionScopeContainer initialized.|{job.GetLogInfo(typeof(TExecuter))}");
 
-					var sqlExecuter = scope.Resolve<ISqlExecuter>();
-					if (!JobExists(job.Id, sqlExecuter))
+					var rhetosHangfireJobs = scope.Resolve<RhetosHangfireJobs>();
+
+					// Checking if the operation that inserted the Hangfire job have completed successfully,
+					// to ensure the atomicity of that operation.
+					if (!rhetosHangfireJobs.JobConfirmationExists(job.Id))
 					{
 						_logger.Trace(() =>
 							$"Job no longer exists in queue. Transaction in which was job created was rolled back. Terminating execution.|{job.GetLogInfo(typeof(TExecuter))}");
+
+						// Removing the recurring job from Hangfire queue, since it was not created successfully.
+						if (!string.IsNullOrEmpty(job.RecurringJobName))
+							RecurringJob.RemoveIfExists(job.RecurringJobName);
+
 						return;
 					}
 
 					var jobExecuter = scope.Resolve<TExecuter>();
 					jobExecuter.Execute(job.Parameter);
 
-					DeleteJob(job.Id, sqlExecuter);
+					if (string.IsNullOrEmpty(job.RecurringJobName))
+						rhetosHangfireJobs.DeleteJobConfirmation(job.Id);
 					scope.CommitChanges();
 				}
 			}
@@ -73,23 +83,6 @@ namespace Rhetos.Jobs.Hangfire
 			}
 
 			_logger.Trace(() => $"ExecuteJob completed.|{job.GetLogInfo(typeof(TExecuter))}");
-		}
-
-		private static bool JobExists(Guid jobId, ISqlExecuter sqlExecuter)
-		{
-			var command = $"SELECT COUNT(1) FROM Common.HangfireJob WITH (READCOMMITTEDLOCK, ROWLOCK) WHERE ID = '{jobId}'";
-			var count = 0;
-
-			sqlExecuter.ExecuteReader(command, reader => count = reader.GetInt32(0));
-
-			//If transaction that created job failed there will be no job scheduled and count will be zero
-			return count > 0;
-		}
-
-		private static void DeleteJob(Guid jobId, ISqlExecuter sqlExecuter)
-		{
-			var command = $"DELETE FROM Common.HangfireJob WHERE ID = '{jobId}'";
-			sqlExecuter.ExecuteSql(command);
 		}
 
 		private void CustomizeScope(ContainerBuilder builder, string userName = null)

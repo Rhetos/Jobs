@@ -10,6 +10,19 @@
     },
     "AppSecurity": {
       "AllClaimsForAnonymous": true
+    },
+    "Jobs": {
+      "Recurring": {
+        "RecurringJob1": {
+          "CronExpression": "* * * * *",
+          "Action": "TestRhetosJobs.RecurringAction1"
+        },
+        "RecurringJob2": {
+          "CronExpression": "0/2 * * * *",
+          "Action": "TestRhetosJobs.RecurringAction2",
+          "Queue": "default"
+        }
+      }
     }
   }
 }

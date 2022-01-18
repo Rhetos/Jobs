@@ -26,15 +26,22 @@ namespace Rhetos.Jobs
     /// </summary>
     public class ActionJobParameter
     {
-        public ActionJobParameter()
+        public static ActionJobParameter FromActionInstance(object actionParameter)
         {
-            // Default constructor for job queue serialization.
+            return new ActionJobParameter
+            {
+                ActionName = actionParameter.GetType().FullName,
+                ActionParameters = actionParameter,
+            };
         }
 
-        public ActionJobParameter(object action)
+        public static ActionJobParameter FromActionName(string actionName)
         {
-            ActionName = action.GetType().FullName;
-            ActionParameters = action;
+            return new ActionJobParameter
+            {
+                ActionName = actionName,
+                ActionParameters = null,
+            };
         }
 
         /// <summary>

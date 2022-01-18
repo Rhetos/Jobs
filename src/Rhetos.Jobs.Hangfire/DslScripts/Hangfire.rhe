@@ -1,4 +1,7 @@
 ﻿Module Common
 {
-	Entity HangfireJob;
+	Entity HangfireJob
+	{
+		ShortString Name { SqlIndex; }
+	}
 }

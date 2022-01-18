@@ -30,24 +30,25 @@ namespace Rhetos.Jobs.Hangfire
 {
     public class BackgroundJobs : IBackgroundJobs
 	{
-		private readonly ISqlExecuter _sqlExecuter;
 		private readonly IUserInfo _userInfo;
         private readonly RhetosHangfireInitialization _hangfireInitialization;
+        private readonly RhetosHangfireJobs _rhetosHangfireJobs;
         private readonly ILogger _logger;
 		private readonly ILogger _performanceLogger;
 
 		private readonly List<JobSchedule> _jobInstances = new List<JobSchedule>();
+        private const string HangfireDefaultQueueName = "default";
 
 		public BackgroundJobs(
 			ILogProvider logProvider,
 			IPersistenceTransaction persistenceTransaction,
-			ISqlExecuter sqlExecuter,
 			IUserInfo userInfo,
-			RhetosHangfireInitialization hangfireInitialization)
+			RhetosHangfireInitialization hangfireInitialization,
+			RhetosHangfireJobs rhetosHangfireJobs)
 		{
-			_sqlExecuter = sqlExecuter;
 			_userInfo = userInfo;
             _hangfireInitialization = hangfireInitialization;
+            _rhetosHangfireJobs = rhetosHangfireJobs;
             _logger = logProvider.GetLogger(InternalExtensions.LoggerName);
 			_performanceLogger = logProvider.GetLogger($"Performance.{InternalExtensions.LoggerName}");
 			persistenceTransaction.BeforeClose += PersistenceTransactionOnBeforeClose;
@@ -64,16 +65,14 @@ namespace Rhetos.Jobs.Hangfire
 		}
 
 		private void EnqueueToHangfire(JobSchedule job)
-		{
-			_logger.Trace(()=> $"Enqueuing job in Hangfire.|{job.GetLogInfo()}");
+        {
+            _logger.Trace(() => $"Enqueuing job in Hangfire.|{job.GetLogInfo()}");
 
-			var commmand = $@"INSERT INTO Common.HangfireJob (ID) VALUES('{job.Job.Id}')";
+            _rhetosHangfireJobs.InsertJobConfirmation(job.Job.Id, job.Job.RecurringJobName);
 
-			_sqlExecuter.ExecuteSql(commmand);
-
-			job.EnqueueJob.Invoke();
-			_logger.Trace(() => $"Job enqueued in Hangfire.|{job.GetLogInfo()}");
-		}
+            job.EnqueueJob.Invoke();
+            _logger.Trace(() => $"Job enqueued in Hangfire.|{job.GetLogInfo()}");
+        }
 
         public void AddJob<TExecuter, TParameter>(TParameter parameter, bool executeInUserContext, object aggregationGroup = null, JobAggregator<TParameter> jobAggregator = null, string queue = null)
 			where TExecuter : IJobExecuter<TParameter>
@@ -83,8 +82,9 @@ namespace Rhetos.Jobs.Hangfire
 			var newJob = new JobParameter<TParameter>
 			{
 				Id = Guid.NewGuid(),
+				RecurringJobName = null,
 				ExecuteAsUser = executeInUserContext ? _userInfo.UserName : null,
-				Parameter = parameter, // Might be updated later.
+				Parameter = parameter, // Might be updated later when applying jobAggregator.
 			};
 
 			var schedule = new JobSchedule
@@ -124,7 +124,7 @@ namespace Rhetos.Jobs.Hangfire
 				}
 			}
 
-			if (string.IsNullOrWhiteSpace(queue) || queue.ToLower() == "default")
+			if (string.IsNullOrWhiteSpace(queue) || queue.ToLower() == HangfireDefaultQueueName)
 			{
 				// Not enqueuing immediately to Hangfire, to allow later duplicate jobs to suppress the current one.
 				schedule.EnqueueJob = () => global::Hangfire.BackgroundJob.Enqueue<RhetosExecutionContext<TExecuter, TParameter>>(
@@ -143,12 +143,66 @@ namespace Rhetos.Jobs.Hangfire
 			}
 
 			_jobInstances.Add(schedule);
-			_logger.Trace(() => $"Job enqueued.|{schedule.GetLogInfo()}");
+			_logger.Trace(() => $"Job created.|{schedule.GetLogInfo()}");
 		}
 
 		/// <summary>
 		/// By default, duplicate jobs in the same aggregation group are eliminated.
 		/// </summary>
 		private static bool DefaultAggregator<TParameter>(TParameter oldJob, ref TParameter newJob) => true;
-	}
+
+		public void SetRecurringJob<TExecuter, TParameter>(string name, string cronExpression, TParameter parameter, string queue = null)
+			where TExecuter : IJobExecuter<TParameter>
+		{
+			_hangfireInitialization.InitializeGlobalConfiguration();
+
+			// The name is required for recurring jobs in order to:
+			// 1. recognize a duplicate job initialization (for example on app startup),
+			// 2. to remove the job when no longer needed.
+			if (string.IsNullOrEmpty(name))
+				throw new ArgumentException("Recurring job must have a name.", nameof(name));
+
+			var newJob = new JobParameter<TParameter>
+			{
+				Id = _rhetosHangfireJobs.GetJobId(name) ?? Guid.NewGuid(),
+				RecurringJobName = name,
+				ExecuteAsUser = null,
+				Parameter = parameter,
+			};
+
+			var schedule = new JobSchedule
+			{
+				Job = newJob,
+				ExecuterType = typeof(TExecuter),
+				ParameterType = typeof(TParameter),
+				AggregationGroup = null,
+				EnqueueJob = () => RecurringJob.AddOrUpdate<RhetosExecutionContext<TExecuter, TParameter>>(
+					name, context => context.ExecuteUnitOfWork(newJob), cronExpression, TimeZoneInfo.Local, queue ?? HangfireDefaultQueueName)
+			};
+
+			_jobInstances.Add(schedule);
+			_logger.Trace(() => $"Recurring job created.|{name}|{schedule.GetLogInfo()}");
+		}
+
+		public IEnumerable<string> ListRecurringJobs()
+		{
+			return _rhetosHangfireJobs.GetJobNames();
+		}
+
+		public void RemoveRecurringJob(string name)
+        {
+			_hangfireInitialization.InitializeGlobalConfiguration();
+
+			if (string.IsNullOrEmpty(name))
+                throw new ArgumentException("Recurring job must have a name.", nameof(name));
+
+            Guid? id = _rhetosHangfireJobs.GetJobId(name);
+
+            if (id != null)
+				_rhetosHangfireJobs.DeleteJobConfirmation(id.Value);
+            else
+                _logger.Trace($"Missing job confirmation entry for '{name}'.");
+            RecurringJob.RemoveIfExists(name);
+        }
+    }
 }

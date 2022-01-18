@@ -90,6 +90,7 @@
     <Content Include="LinqPad\Rhetos Server DOM.linq" />
     <Content Include="LinqPad\Rhetos Server SOAP.linq" />
     <Content Include="DslScripts\LongRunningJobTest.rhe" />
+    <Content Include="DslScripts\RecurringJobsTest.rhe" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
