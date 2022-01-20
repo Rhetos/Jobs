@@ -2,6 +2,11 @@
 {
 	Entity HangfireJob
 	{
-		ShortString Name { SqlIndex; }
+		ShortString Name;
 	}
+
+	SqlObject IX_HangfireJob_Name_NotNull
+		"CREATE UNIQUE INDEX IX_HangfireJob_Name_NotNull ON Common.HangfireJob (Name)
+			INCLUDE (ID) WHERE Name IS NOT NULL"
+		"DROP INDEX IX_HangfireJob_Name_NotNull ON Common.HangfireJob";
 }
