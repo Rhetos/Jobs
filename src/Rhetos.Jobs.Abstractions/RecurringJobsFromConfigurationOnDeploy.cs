@@ -21,11 +21,9 @@ using Rhetos.Extensibility;
 using Rhetos.Logging;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.Composition;
 
 namespace Rhetos.Jobs
 {
-    [Export(typeof(IServerInitializer))]
     public class RecurringJobsFromConfigurationOnDeploy : IServerInitializer
     {
         private readonly RecurringJobsFromConfiguration _recurringJobsFromConfiguration;

@@ -20,12 +20,10 @@
 using Autofac;
 using Autofac.Integration.Wcf;
 using Rhetos.Logging;
-using System.ComponentModel.Composition;
 using System.Web;
 
 namespace Rhetos.Jobs
 {
-    [Export(typeof(IService))]
     public class RecurringJobsFromConfigurationOnStartup : IService
     {
         private readonly ILogger _logger;

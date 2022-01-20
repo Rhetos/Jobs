@@ -19,6 +19,7 @@
 
 using System.ComponentModel.Composition;
 using Autofac;
+using Rhetos.Extensibility;
 using Rhetos.Utilities;
 
 namespace Rhetos.Jobs.Hangfire
@@ -36,6 +37,12 @@ namespace Rhetos.Jobs.Hangfire
 			builder.RegisterGeneric(typeof(RhetosExecutionContext<,>)).InstancePerLifetimeScope();
 
 			builder.RegisterType<RhetosHangfireInitialization>().SingleInstance();
+
+			// Automatic update of recurring jobs is activated by the 'implementation' package,
+			// not the 'interface' package (Rhetos.Jobs.Abstractions), event though those classes
+			// are implemented in the interface package.
+			builder.RegisterType<RecurringJobsFromConfigurationOnDeploy>().As<IServerInitializer>();
+			builder.RegisterType<RecurringJobsFromConfigurationOnStartup>().As<IService>();
 
 			base.Load(builder);
 		}
