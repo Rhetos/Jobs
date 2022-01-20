@@ -29,6 +29,10 @@ namespace Rhetos.Jobs.Hangfire
     [Options("Rhetos:Jobs")]
     public class RecurringJobsOptions
     {
+        public bool UpdateRecurringJobsFromConfigurationOnDeploy { get; set; } = true;
+
+        public bool UpdateRecurringJobsFromConfigurationOnStartup { get; set; } = true;
+
         public Dictionary<string, RecurringJobsDescription> Recurring { get; set; }
 
         public static RecurringJobsOptions FromConfiguration(IConfiguration configuration)

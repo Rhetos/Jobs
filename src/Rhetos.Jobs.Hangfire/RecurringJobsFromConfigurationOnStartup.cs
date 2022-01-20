@@ -29,14 +29,22 @@ namespace Rhetos.Jobs.Hangfire
     public class RecurringJobsFromConfigurationOnStartup : IService
     {
         private readonly ILogger _logger;
+        private readonly RecurringJobsOptions _recurringJobsOptions;
 
-        public RecurringJobsFromConfigurationOnStartup(ILogProvider logProvider)
+        public RecurringJobsFromConfigurationOnStartup(ILogProvider logProvider, RecurringJobsOptions recurringJobsOptions)
         {
             _logger = logProvider.GetLogger(GetType().Name);
+            _recurringJobsOptions = recurringJobsOptions;
         }
 
         public void Initialize()
         {
+            if (!_recurringJobsOptions.UpdateRecurringJobsFromConfigurationOnStartup)
+            {
+                _logger.Info($"{nameof(RecurringJobsOptions.UpdateRecurringJobsFromConfigurationOnStartup)} is disabled.");
+                return;
+            }
+
             // IService initialization is executed in the root container scope. We cannot use the root scope
             // for database writes, because the database transaction is committed only when the scope is closed.
 

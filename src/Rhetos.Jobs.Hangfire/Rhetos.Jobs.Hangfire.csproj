@@ -49,6 +49,7 @@
     <Compile Include="IJobParameter.cs" />
     <Compile Include="InternalExtensions.cs" />
     <Compile Include="JobParameter.cs" />
+    <Compile Include="RecurringJobsFromConfigurationOnDeploy.cs" />
     <Compile Include="RecurringJobsFromConfigurationOnStartup.cs" />
     <Compile Include="RhetosExecutionContext.cs" />
     <Compile Include="JobSchedule.cs" />
