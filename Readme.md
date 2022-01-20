@@ -1,13 +1,33 @@
-This repository contains two Rhetos plugins packages for asynchronous execution of background jobs:
+# Rhetos.Jobs.Abstractions and Rhetos.Jobs.Hangfire
+
+This documentation describes installation and usage on Rhetos v5.
+For documentation on older version of this plugin for **Rhetos v4**, see the previous release branch
+[Readme.md](https://github.com/Rhetos/Jobs/blob/rhetos-4/Readme.md).
+
+This repository contains two Rhetos plugin packages for asynchronous execution of background jobs:
 
 1. **Rhetos.Jobs.Abstractions** - interfaces for asynchronous operations.
 2. **Rhetos.Jobs.Hangfire** - an implementation option using Hangfire library.
 
-# Rhetos.Jobs.Abstractions
+Contents:
+
+1. [Rhetos.Jobs.Abstractions](#rhetosjobsabstractions)
+   1. [Asynchronously executing DSL Action in background](#asynchronously-executing-dsl-action-in-background)
+   2. [Recurring jobs](#recurring-jobs)
+2. [Rhetos.Jobs.Hangfire](#rhetosjobshangfire)
+   1. [Installation](#installation)
+   2. [Configuration](#configuration)
+   3. [Recurring jobs on Hangfire](#recurring-jobs-on-hangfire)
+   4. [Adding Hangfire Dashboard UI](#adding-hangfire-dashboard-ui)
+   5. [Running job server in unit tests and CLI utilities](#running-job-server-in-unit-tests-and-cli-utilities)
+   6. [Troubleshooting](#troubleshooting)
+      1. [ThreadAbortException](#threadabortexception)
+
+## Rhetos.Jobs.Abstractions
 
 Rhetos.Jobs.Abstractions provides interfaces for asynchronous operations in Rhetos applications.
-
 This packages should be referenced in Rhetos plugins that require asynchronous execution and background processing, but to not need to depend on a *specific library* that implements this feature.
+The final application should reference an *implementation package* (for example Rhetos.Jobs.Hangfire) that contains implementation of those interfaces and runs the background jobs.
 
 This package contains:
 
@@ -15,24 +35,91 @@ This package contains:
 * Interface *IJobExecuter* - Implement this interface to add a custom background job type.
   * Implementation *ActionJobExecuter* - Generic job executer for background jobs that are developed as a DSL Action.
 
-# Rhetos.Jobs.Hangfire
+### Asynchronously executing DSL Action in background
+
+In order to enqueue asynchronous execution of a DSL Action you have to:
+
+* Demand from IoC container an instance of `IBackgroundJobs`.
+* Create action parameters of an action you wish to enqueue for asynchronous execution.
+* Call `EnqueueAction` method of `IBackgroundJobs` object. Method parameters are:
+  * object action - Action which should be executed.
+  * bool executeInUserContext - If true Action will be executed in context of the user which started the transaction in which Action was enqueued. Otherwise it will be executed in context of service account.
+  * bool optimizeDuplicates - If true previous same Actions (same Action with same parameters) will be removed from queue.
+
+Here is an example:
+
+```c
+Module Test
+{
+  Entity SomeEntity
+  {
+    SaveMethod
+    {
+      AfterSave EnqueueAsyncExecutionOfSomething
+        '{
+          foreach (var insertedItem in insertedNew)
+          {
+            var action = new Test.ProcessSomething { ItemId = insertedItem.Id };
+            _backgroundJob.EnqueueAction(action, executeInUserContext: false, optimizeDuplicates: true);
+          }
+        }';
+    }
+    RepositoryUses _backgroundJob 'Rhetos.Jobs.IBackgroundJobs, Rhetos.Jobs.Abstractions';
+  }
+  
+  Action ProcessSomething
+    '(parameters, repository, userInfo) =>
+    {
+      // some code goes here
+    }'
+  {
+    Guid ItemId;
+  }
+}
+```
+
+Enqueued actions will be executed asynchronously, immediately after the transaction in which they were enqueued is closed.
+If the transaction is rolled back for any number of reasons, actions will not be enqueued and therefore not executed.
+
+### Recurring jobs
+
+Recurring jobs can be configured to execute DSL Action in time periods, specified by [CRON expression](https://en.wikipedia.org/wiki/Cron).
+
+Recurring jobs can be specified in the application settings, for example in rhetos-app.settings.json:
+
+```json
+{
+  "Rhetos": {
+    "Jobs": {
+      "Recurring": {
+        "RecurringJob1": {
+          "CronExpression": "* * * * *",
+          "Action": "SomeModule.RecurringAction1Minute"
+        },
+        "RecurringJob2": {
+          "CronExpression": "0/2 * * * *",
+          "Action": "SomeModule.RecurringAction2Minutes",
+          "Queue": "default"
+        }
+      }
+    }
+  }
+}
+```
+
+The jobs from the configuration are automatically applied to Hangfire on each Rhetos **database update**, and on each **application startup**.
+This can be disabled by setting to `false` configuration options `Rhetos:Jobs:UpdateRecurringJobsFromConfigurationOnDeploy`
+or `Rhetos:Jobs:UpdateRecurringJobsFromConfigurationOnStartup`.
+
+As an alternative to the application settings, the recurring jobs can be added or removed programmatically
+by using `IBackgroundJobs` interface, similar to the C# example above.
+
+## Rhetos.Jobs.Hangfire
 
 Rhetos.Jobs.Hangfire is a plugin package for [Rhetos development platform](https://github.com/Rhetos/Rhetos).
 It provides an implementation of asynchronous execution of background jobs.
 
-Contents:
-
-1. [Installation](#installation)
-2. [Configuration](#configuration)
-3. [Adding Hangfire Dashboard UI](#adding-hangfire-dashboard-ui)
-4. [Usage](#usage)
-5. [Running job server in unit tests and CLI utilities](#running-job-server-in-unit-tests-and-cli-utilities)
-6. [Troubleshooting](#troubleshooting)
-   1. [ThreadAbortException](#threadabortexception)
-
-See [rhetos.org](http://www.rhetos.org/) for more information on Rhetos.
-
-## Installation
+### Installation
 
 Installing this package to a Rhetos web application:
 
@@ -48,7 +135,7 @@ If you want to run the background jobs in the **Rhetos web application**:
 If you want to run the background jobs in a **separate application**, see instructions below
 in section [Running job server in unit tests and CLI utilities](#running-job-server-in-unit-tests-and-cli-utilities).
 
-## Configuration
+### Configuration
 
 Configuration of the plugin is done in `appsettings.json`, like in the following example (all parameters are optional).
 
@@ -79,57 +166,19 @@ Configuration of the plugin is done in `appsettings.json`, like in the following
 }
 ```
 
-## Adding Hangfire Dashboard UI
+### Recurring jobs on Hangfire
+
+Hangfire 1.7 uses [NCrontab](https://github.com/atifaziz/NCrontab/blob/master/README.md) implementation or CRON expressions.
+
+Time period shorter then a minute (mostly for testing purposes) might cause issues and require additional setup,
+see [Hangfire recurring tasks under minute](https://stackoverflow.com/questions/38367398/hangfire-recurring-tasks-under-minute).
+
+### Adding Hangfire Dashboard UI
 
 See "Adding Dashboard UI" in Hangfire documentation:
 <https://docs.hangfire.io/en/latest/getting-started/aspnet-core-applications.html#adding-dashboard-ui>
 
-## Usage
-
-In order to enqueue asynchronous execution of an action you have to:
-
-* Demand from IOC container an instance of `IBackgroundJobs`.
-* Create action parameters of an action you wish to enqueue for asynchronous execution.
-* Call `EnqueueAction` method of `IBackgroundJobs` object. Method parameters are:
-  * object action - Action which should be executed.
-  * bool executeInUserContext - If true Action will be executed in context of the user which started the transaction in which Action was enqueued. Otherwise it will be executed in context of service account.
-  * bool optimizeDuplicates - If true previous same Actions (same Action with same parameters) will be removed from queue.
-
-Here is an example:
-
-```c
-Module Test
-{
-  Entity SomeEntity
-  {
-    SaveMethod
-    {
-      AfterSave EnqueueAsyncExecutionOfSomething
-        '{
-          foreach (var insertedItem in insertedNew)
-          {
-            var action = new Test.ProcessSomething { ItemId = insertedItem.Id };
-            _backgroundJob.EnqueueAction(action, executeInUserContext: false, optimizeDuplicates: true);
-          }
-        }';
-    }
-    RepositoryUses _backgroundJob 'Rhetos.Jobs.IBackgroundJobs, Rhetos.Jobs.Abstractions';
-  }
-  
-  Action ProcessSomething '(parameters, repository, userInfo) =>
-  {
-    // some code goes here
-  }'
-  {
-    Guid ItemId;
-  }
-}
-```
-
-Enqueued actions will be executed asynchronously, immediately after the transaction in which they were enqueued is closed.
-If the transaction is rolled back for any number of reasons, actions will not be enqueued and therefore not executed.
-
-## Running job server in unit tests and CLI utilities
+### Running job server in unit tests and CLI utilities
 
 You can create a separate application to run the background jobs,
 for example a Windows service or a CLI utility,
@@ -159,9 +208,9 @@ Remarks:
 * You can test the job runner utility with a LINQPad script that creates the jobs,
   for example see [AddJob.linq](https://github.com/Rhetos/Jobs/blob/master/test/TestApp/LinqPad/AddJob.linq).
 
-## Troubleshooting
+### Troubleshooting
 
-### ThreadAbortException
+#### ThreadAbortException
 
 *ThreadAbortException* can occur on application shutdown if there are some Hangfire background jobs still running.
 Review the Hangfire documentation:
