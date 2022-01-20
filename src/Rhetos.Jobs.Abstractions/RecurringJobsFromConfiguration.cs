@@ -25,14 +25,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Rhetos.Jobs.Hangfire
+namespace Rhetos.Jobs
 {
 
     /// <summary>
     /// Recurring jobs can be specified in configuration settings.
-    /// This class automatically adds the jobs from configuration into the Hangfire queue,
-    /// and deleted the Hangfire jobs when removed from configuration.
-    /// The changes are applied on application startup.
+    /// This class schedules the recurring background job from configuration,
+    /// and cancels the old scheduled jobs when removed from configuration.
     /// </summary>
     public class RecurringJobsFromConfiguration
     {
@@ -43,7 +42,7 @@ namespace Rhetos.Jobs.Hangfire
         private readonly ISqlExecuter _sqlExecuter;
 
         /// <summary>
-        /// Jobs created by this class have specific suffix, so that this class can remove them when needed,
+        /// Jobs created by this class have a specific suffix, so that this class can remove them when needed
         /// without affecting other manually created jobs.
         /// </summary>
         public static readonly string JobNameSuffix = "-from-configuration";
@@ -59,7 +58,7 @@ namespace Rhetos.Jobs.Hangfire
             _sqlExecuter = sqlExecuter;
         }
 
-        public void UpdateHangfireJobsList()
+        public void UpdateJobs()
         {
             CreteCustomLock(GetType().FullName);
 

@@ -49,15 +49,11 @@
     <Compile Include="IJobParameter.cs" />
     <Compile Include="InternalExtensions.cs" />
     <Compile Include="JobParameter.cs" />
-    <Compile Include="RecurringJobsFromConfigurationOnDeploy.cs" />
-    <Compile Include="RecurringJobsFromConfigurationOnStartup.cs" />
     <Compile Include="RhetosExecutionContext.cs" />
     <Compile Include="JobSchedule.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="RecurringJobsFromConfiguration.cs" />
     <Compile Include="RhetosHangfireJobs.cs" />
     <Compile Include="RhetosHangfireInitialization.cs" />
-    <Compile Include="RecurringJobsOptions.cs" />
     <Compile Include="RhetosJobsAspNetService.cs" />
     <Compile Include="RhetosJobServer.cs" />
     <Compile Include="RhetosJobHangfireOptions.cs" />

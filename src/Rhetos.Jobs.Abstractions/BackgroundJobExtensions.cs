@@ -71,7 +71,6 @@ namespace Rhetos.Dom.DefaultConcepts
 		/// <param name="cronExpression">
 		/// A pattern that describes the job schedule: when and how often the job is executed.
 		/// See <see href="https://en.wikipedia.org/wiki/Cron#CRON_expression"/> for basic information.
-		/// See <see href="https://github.com/HangfireIO/Cronos"/> for .NET library if needed.
 		/// </param>
 		/// <param name="queue">
 		/// Name of the queue. Default is null.

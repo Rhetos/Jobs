@@ -21,10 +21,10 @@ using Rhetos.Utilities;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Rhetos.Jobs.Hangfire
+namespace Rhetos.Jobs
 {
     /// <summary>
-    /// Rhetos.Jobs.Hangfire configuration settings
+    /// Runtime configuration settings.
     /// </summary>
     [Options("Rhetos:Jobs")]
     public class RecurringJobsOptions

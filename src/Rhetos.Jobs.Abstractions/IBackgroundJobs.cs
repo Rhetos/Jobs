@@ -82,7 +82,6 @@ namespace Rhetos.Jobs
 		/// <param name="cronExpression">
 		/// A pattern that describes the job schedule: when and how often the job is executed.
 		/// See <see href="https://en.wikipedia.org/wiki/Cron#CRON_expression"/> for basic information.
-		/// See <see href="https://github.com/HangfireIO/Cronos"/> for .NET library if needed.
 		/// </param>
 		/// <param name="parameter">
 		/// Job parameters.

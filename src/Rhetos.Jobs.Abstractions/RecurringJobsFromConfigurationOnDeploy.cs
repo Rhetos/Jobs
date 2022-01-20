@@ -23,7 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 
-namespace Rhetos.Jobs.Hangfire
+namespace Rhetos.Jobs
 {
     [Export(typeof(IServerInitializer))]
     public class RecurringJobsFromConfigurationOnDeploy : IServerInitializer
@@ -48,7 +48,7 @@ namespace Rhetos.Jobs.Hangfire
                 return;
             }
 
-            _recurringJobsFromConfiguration.UpdateHangfireJobsList();
+            _recurringJobsFromConfiguration.UpdateJobs();
         }
 
         public IEnumerable<string> Dependencies => Array.Empty<string>();

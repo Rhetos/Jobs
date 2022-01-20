@@ -23,7 +23,7 @@ using Rhetos.Logging;
 using System.ComponentModel.Composition;
 using System.Web;
 
-namespace Rhetos.Jobs.Hangfire
+namespace Rhetos.Jobs
 {
     [Export(typeof(IService))]
     public class RecurringJobsFromConfigurationOnStartup : IService
@@ -66,7 +66,7 @@ namespace Rhetos.Jobs.Hangfire
             using (var scope = new TransactionScopeContainer(container))
             {
                 var recurringJobsFromConfiguration = scope.Resolve<RecurringJobsFromConfiguration>();
-                recurringJobsFromConfiguration.UpdateHangfireJobsList();
+                recurringJobsFromConfiguration.UpdateJobs();
                 scope.CommitChanges();
             }
         }
