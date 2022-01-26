@@ -8,5 +8,8 @@
 	SqlObject IX_HangfireJob_Name_NotNull
 		"CREATE UNIQUE INDEX IX_HangfireJob_Name_NotNull ON Common.HangfireJob (Name)
 			INCLUDE (ID) WHERE Name IS NOT NULL"
-		"DROP INDEX IX_HangfireJob_Name_NotNull ON Common.HangfireJob";
+		"DROP INDEX IX_HangfireJob_Name_NotNull ON Common.HangfireJob"
+	{
+		SqlDependsOn Common.HangfireJob.Name;
+	}
 }
