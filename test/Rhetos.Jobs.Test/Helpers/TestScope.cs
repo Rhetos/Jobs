@@ -34,7 +34,7 @@ namespace Rhetos.Jobs.Test
         /// <summary>
         /// Creates a thread-safe lifetime scope DI container (service provider)
         /// to isolate unit of work with a <b>separate database transaction</b>.
-        /// To commit changes to database, call <see cref="IUnitOfWorkScope.CommitAndClose"/> at the end of the 'using' block.
+        /// To commit changes to database, call <see cref="IUnitOfWork.CommitAndClose"/> at the end of the 'using' block.
         /// </summary>
         public static IUnitOfWorkScope Create(Action<ContainerBuilder> registerCustomComponents = null)
         {
