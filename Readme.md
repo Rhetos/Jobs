@@ -164,7 +164,7 @@ See Hangfire documentation for more info in this issue: [Using Global.asax.cs fi
 
 ### Recurring jobs on Hangfire
 
-Hangfire 1.7 uses [NCrontab](https://github.com/atifaziz/NCrontab/blob/master/README.md) implementation or cron expressions.
+Hangfire 1.7 uses [NCrontab](https://github.com/atifaziz/NCrontab/blob/master/README.md) implementation or CRON expressions.
 
 Time period shorter then a minute (mostly for testing purposes) might cause issues and require additional setup,
 see [Hangfire recurring tasks under minute](https://stackoverflow.com/questions/38367398/hangfire-recurring-tasks-under-minute).
