@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
   <metadata>
     <id>Rhetos.Jobs.Hangfire</id>
-    <version>1.1.0-dev</version>
+    <version>1.2.0-dev</version>
     <authors>Omega software</authors>
     <owners>Omega software</owners>
     <projectUrl>https://github.com/rhetos/rhetos</projectUrl>
@@ -14,7 +14,7 @@
     <dependencies>
       <dependency id="Rhetos" version="4.2.0" />
       <dependency id="Rhetos.CommonConcepts" version="4.2.0" />
-      <dependency id="Rhetos.Jobs.Abstractions" version="1.1.0-dev" />
+      <dependency id="Rhetos.Jobs.Abstractions" version="1.2.0-dev" />
       <dependency id="Hangfire" version="1.7.28" />
       <dependency id="Hangfire.AspNet" version="0.2.0" />
       <dependency id="HangFire.Autofac" version="2.3.1" />
