@@ -25,6 +25,11 @@ namespace Rhetos.Jobs.Hangfire
     {
         Guid Id { get; }
 
+        /// <summary>
+        /// Null for immediate asynchronous jobs, not null for recurring jobs.
+        /// </summary>
+        string RecurringJobName { get; }
+
         string ExecuteAsUser { get; }
 
         string GetLogInfo(Type executerType);

@@ -85,7 +85,7 @@ If the transaction is rolled back for any number of reasons, actions will not be
 
 Recurring jobs can be configured to execute DSL Action in time periods, specified by [CRON expression](https://en.wikipedia.org/wiki/Cron).
 
-Recurring jobs can be specified in the application settings, for example in rhetos-app.settings.json:
+Recurring jobs can be specified in the application settings, for example in appsettings.json:
 
 ```json
 {
@@ -128,7 +128,11 @@ Installing this package to a Rhetos web application:
 
 If you want to run the background jobs in the **Rhetos web application**:
 
-1. In `Startup.Configure` method, add `app.UseRhetosHangfireServer(); // Start background job processing.`
+1. In `Startup.Configure` method, add:
+   ```cs
+   app.UseRhetosJobsFromConfiguration(); // Initialize recurring jobs.
+   app.UseRhetosHangfireServer(); // Start background job processing.
+   ```
 2. If running the application on IIS, follow the instructions in section
    [Making ASP.NET Core application always running on IIS](https://docs.hangfire.io/en/latest/deployment-to-production/making-aspnet-app-always-running.html#making-asp-net-core-application-always-running-on-iis).
 

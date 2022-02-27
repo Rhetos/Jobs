@@ -15,10 +15,10 @@
       <dependency id="Rhetos" version="5.0.0-dev" />
       <dependency id="Rhetos.CommonConcepts" version="5.0.0-dev" />
       <dependency id="Rhetos.Jobs.Abstractions" version="5.0.0-dev" />
-      <dependency id="Hangfire.AspNetCore" version="1.7.25" />
+      <dependency id="Hangfire.AspNetCore" version="1.7.28" />
       <dependency id="HangFire.Autofac" version="2.3.1" />
-      <dependency id="Hangfire.Core" version="1.7.25" />
-      <dependency id="Hangfire.SqlServer" version="1.7.25" />
+      <dependency id="Hangfire.Core" version="1.7.28" />
+      <dependency id="Hangfire.SqlServer" version="1.7.28" />
     </dependencies>
   </metadata>
   <files>

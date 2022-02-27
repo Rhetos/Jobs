@@ -1,0 +1,10 @@
+﻿Module TestRhetosJobs
+{
+	Action RecurringAction1
+		'(parameter, repository, userInfo) =>
+			_domRepository.Common.AddToLog.Execute(new Common.AddToLog { Action = "RecurringAction1" })';
+
+	Action RecurringAction2
+		'(parameter, repository, userInfo) =>
+			_domRepository.Common.AddToLog.Execute(new Common.AddToLog { Action = "RecurringAction2" })';
+}

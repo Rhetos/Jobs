@@ -22,7 +22,7 @@ using System;
 namespace Rhetos.Jobs.Hangfire
 {
     /// <summary>
-    /// Extended information on job, for job management before it is executed.
+    /// Extended information on job, for job management before it is enqueued to Hangfire.
     /// </summary>
     internal class JobSchedule
 	{

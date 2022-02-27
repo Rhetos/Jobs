@@ -18,6 +18,7 @@
 */
 
 using System;
+using System.Collections.Generic;
 
 namespace Rhetos.Jobs
 {
@@ -63,6 +64,46 @@ namespace Rhetos.Jobs
 		/// </param>
 		void AddJob<TExecuter, TParameter>(TParameter parameter, bool executeInUserContext, object aggregationGroup = null, JobAggregator<TParameter> jobAggregator = null, string queue = null)
 			where TExecuter : IJobExecuter<TParameter>;
+
+		/// <summary>
+		/// Schedules a recurring background job.
+		/// If a recurring job with the same <paramref name="name"/> already exists, it will be updated.
+		/// The job will not be scheduled it the current scope (web request) fails.
+		/// </summary>
+		/// <typeparam name="TExecuter">
+		/// Class that will execute the job. Must implement <see cref="IJobExecuter{TParameter}"/>.
+		/// </typeparam>
+		/// <typeparam name="TParameter">
+		/// Job parameter that will be provided to job executer.
+		/// </typeparam>
+		/// <param name="name">
+		/// Unique job name. If a job with the same name already exists, it will be overwritten.
+		/// </param>
+		/// <param name="cronExpression">
+		/// A pattern that describes the job schedule: when and how often the job is executed.
+		/// See <see href="https://en.wikipedia.org/wiki/Cron#CRON_expression"/> for basic information.
+		/// </param>
+		/// <param name="parameter">
+		/// Job parameters.
+		/// </param>
+		/// <param name="queue">
+		/// Name of the queue. Default is null.
+		/// </param>
+		void SetRecurringJob<TExecuter, TParameter>(string name, string cronExpression, TParameter parameter, string queue = null)
+			where TExecuter : IJobExecuter<TParameter>;
+
+		/// <summary>
+		/// Returns a list of names of the recurring jobs that were created by <see cref="SetRecurringJob"/>.
+		/// </summary>
+		IEnumerable<string> ListRecurringJobs();
+
+		/// <summary>
+		/// Removed the jobs that was created by <see cref="SetRecurringJob"/>.
+		/// </summary>
+		/// <remarks>
+		/// If the job does not exist, it the method will *not* throw an exception.
+		/// </remarks>
+		void RemoveRecurringJob(string name);
 	}
 
 	/// <summary>

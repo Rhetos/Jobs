@@ -28,6 +28,9 @@ namespace Rhetos.Jobs
 	{
 		protected override void Load(ContainerBuilder builder)
 		{
+            builder.Register(context => RecurringJobsOptions.FromConfiguration(context.Resolve<IConfiguration>())).SingleInstance();
+            builder.RegisterType<RecurringJobsFromConfiguration>().InstancePerLifetimeScope();
+
 			builder.RegisterType<ActionJobExecuter>();
 			base.Load(builder);
 		}

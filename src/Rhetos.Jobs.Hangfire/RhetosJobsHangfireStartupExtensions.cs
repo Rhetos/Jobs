@@ -21,6 +21,7 @@ using Autofac;
 using Hangfire;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
+using Rhetos.Extensibility;
 using Rhetos.Jobs;
 using Rhetos.Jobs.Hangfire;
 using Rhetos.Utilities;
@@ -49,10 +50,17 @@ namespace Rhetos
                     {
                         containerBuilder.Register(context => context.Resolve<IConfiguration>().GetOptions<RhetosJobHangfireOptions>()).SingleInstance();
                         containerBuilder.RegisterType<BackgroundJobs>().As<IBackgroundJobs>().InstancePerLifetimeScope();
+                        containerBuilder.RegisterType<RhetosHangfireJobs>().InstancePerLifetimeScope();
                         containerBuilder.RegisterGeneric(typeof(RhetosExecutionContext<,>)).InstancePerLifetimeScope();
                         containerBuilder.RegisterType<RhetosHangfireInitialization>().SingleInstance();
                         containerBuilder.RegisterType<RhetosJobServerFactory>().SingleInstance();
                         containerBuilder.RegisterType<JobServersCollection>().SingleInstance();
+
+                        // Automatic update of recurring jobs is activated by the 'implementation' package,
+                        // not the 'interface' package (Rhetos.Jobs.Abstractions), event though those classes
+                        // are implemented in the interface package.
+                        containerBuilder.RegisterType<RecurringJobsFromConfigurationOnDeploy>().As<IServerInitializer>();
+                        containerBuilder.RegisterType<RecurringJobsFromConfigurationOnStartup>();
                     }));
 
             return builder;
@@ -91,7 +99,7 @@ namespace Rhetos
         /// If not provided, one background job server will be started with default settings.
         /// The Action may be null for any background job server; it uses app setting for <see cref="RhetosJobHangfireOptions"/> by default,
         /// </param>
-        public static void UseRhetosHangfireServer(this RhetosHost rhetosHost, params Action<BackgroundJobServerOptions>[] configureOptions)
+        public static void UseRhetosHangfireServer(RhetosHost rhetosHost, params Action<BackgroundJobServerOptions>[] configureOptions)
         {
             GlobalConfiguration.Configuration.UseAutofacActivator(rhetosHost.GetRootContainer());
 
@@ -103,6 +111,21 @@ namespace Rhetos
                 var jobServers = rhetosHost.GetRootContainer().Resolve<JobServersCollection>();
                 jobServers.CreateJobServer(configure);
             }
+        }
+
+        /// <summary>
+        /// Recurring jobs can be specified in the application's settings.
+        /// This method schedules the recurring background jobs from the configuration,
+        /// and cancels any obsolete scheduled jobs when removed from configuration.
+        /// </summary>
+        /// <remarks>
+        /// This method will not create the recurring jobs if the configuration option <see cref="RecurringJobsOptions.UpdateRecurringJobsFromConfigurationOnStartup"/> is disabled.
+        /// </remarks>
+        public static IApplicationBuilder UseRhetosJobsFromConfiguration(this IApplicationBuilder applicationBuilder)
+        {
+            var rhetosHost = applicationBuilder.ApplicationServices.GetRequiredService<RhetosHost>();
+            RecurringJobsFromConfigurationOnStartup.Initialize(rhetosHost);
+            return applicationBuilder;
         }
     }
 }
