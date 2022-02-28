@@ -30,7 +30,7 @@ namespace Rhetos.Jobs.Test
 		[TestMethod]
 		public void JobsFromConfiguration()
 		{
-			using (var scope = RhetosProcessHelper.CreateScope())
+			using (var scope = TestScope.Create())
 			{
                 var options = scope.Resolve<RecurringJobsOptions>();
 

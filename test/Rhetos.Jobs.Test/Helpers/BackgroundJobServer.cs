@@ -33,7 +33,7 @@ namespace Rhetos.Jobs.Test
         [AssemblyInitialize]
         public static void HangfireJobsServiceInitialize(TestContext _)
         {
-            TestScope.RhetosHost.UseRhetosHangfireServer();
+            RhetosJobsHangfireStartupExtensions.UseRhetosHangfireServer(TestScope.RhetosHost);
         }
 
         /// <summary>
