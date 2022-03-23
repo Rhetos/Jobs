@@ -12,7 +12,7 @@
 ## 1.1.0 (2022-02-14)
 
 * Recurring jobs supported, specified by a [CRON expression](https://en.wikipedia.org/wiki/Cron#CRON_expression).
-* The recurring jobs that executed a DSL Action can be specified in the application's configuration setting.
+* The recurring jobs that execute a DSL Action can be specified in the application's configuration setting.
 
 ## 1.0.0 (2021-04-23)
 

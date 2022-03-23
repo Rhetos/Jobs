@@ -22,6 +22,8 @@ Contents:
    5. [Running job server in unit tests and CLI utilities](#running-job-server-in-unit-tests-and-cli-utilities)
    6. [Troubleshooting](#troubleshooting)
       1. [ThreadAbortException](#threadabortexception)
+3. [How to contribute](#how-to-contribute)
+   1. [Building and testing the source code](#building-and-testing-the-source-code)
 
 ## Rhetos.Jobs.Abstractions
 
@@ -121,7 +123,7 @@ It provides an implementation of asynchronous execution of background jobs.
 
 ### Installation
 
-Installing this package to a Rhetos web application:
+Installing this package to a Rhetos application:
 
 1. Add "Rhetos.Jobs.Hangfire" NuGet package, available at the [NuGet.org](https://www.nuget.org/) on-line gallery.
 2. In `Startup.ConfigureServices` method, extend the Rhetos services configuration (at `services.AddRhetosHost`) with: `.AddJobsHangfire()`
@@ -220,3 +222,20 @@ Remarks:
 Review the Hangfire documentation:
 For console apps and Windows services, make sure to [Dispose BackgroundJobServer](https://docs.hangfire.io/en/latest/background-processing/processing-background-jobs.html) before exiting the application.
 For web applications, reduce the issue with [Making ASP.NET application always running](https://docs.hangfire.io/en/latest/deployment-to-production/making-aspnet-app-always-running.html).
+
+## How to contribute
+
+Contributions are very welcome. The easiest way is to fork this repo, and then
+make a pull request from your fork. The first time you make a pull request, you
+may be asked to sign a Contributor Agreement.
+For more info see [How to Contribute](https://github.com/Rhetos/Rhetos/wiki/How-to-Contribute) on Rhetos wiki.
+
+### Building and testing the source code
+
+* Note: This package is already available at the [NuGet.org](https://www.nuget.org/) online gallery.
+  You don't need to build it from source in order to use it in your application.
+* To build the package from source, run `Clean.bat`, `Build.bat` and `Test.bat`.
+* For the test script to work, you need to create an empty database and
+  a settings file `test\TestApp\ConnectionString.local.json`
+  with the database connection string (configuration key "ConnectionStrings:RhetosConnectionString").
+* The build output is a NuGet package in the "Install" subfolder.
