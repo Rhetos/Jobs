@@ -12,8 +12,8 @@
     <releaseNotes>
 </releaseNotes>
     <dependencies>
-      <dependency id="Rhetos" version="5.0.0-dev" />
-      <dependency id="Rhetos.CommonConcepts" version="5.0.0-dev" />
+      <dependency id="Rhetos" version="5.0.0" />
+      <dependency id="Rhetos.CommonConcepts" version="5.0.0" />
       <dependency id="Rhetos.Jobs.Abstractions" version="5.0.0-dev" />
       <dependency id="Hangfire.AspNetCore" version="1.7.28" />
       <dependency id="HangFire.Autofac" version="2.3.1" />
