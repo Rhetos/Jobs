@@ -34,34 +34,37 @@ namespace Rhetos.Jobs.Test
     public static class RhetosHangfireHelper
 	{
         public static readonly IUserInfo JobsCreatedByUser = new TestUserInfo("TestJobsUser", "TestJobsMachine");
+        public static readonly IUserInfo JobsCreatedByAnonymous = new TestUserInfo("", "TestJobsMachine", isUserRecognized: false);
 
         /// <summary>
         /// Resolves IBackgroundJobs from DI and adds the new job by calling <see cref="BackgroundJobExtensions.EnqueueAction"/>.
         /// Returns Rhetos job IDs for provided actions.
         /// </summary>
 #pragma warning disable CA1002 // Do not expose generic lists
-        public static List<Guid> EnqueueActionJobs(ICollection<(object ActionParameter, bool ExecuteInUserContext, bool OptimizeDuplicates)> actions)
+        public static List<Guid> EnqueueActionJobs(ICollection<(object ActionParameter, bool ExecuteInUserContext, bool OptimizeDuplicates, bool AnonymousUser)> actions)
 #pragma warning restore CA1002 // Do not expose generic lists
         {
             var rhetosJobIds = new List<Guid>();
             var log = new List<string>();
-            using (var scope = TestScope.Create(builder => builder
-                .AddLogMonitor(log)
-                .AddFakeUser(JobsCreatedByUser)))
-            {
-                var jobs = scope.Resolve<IBackgroundJobs>();
 
-                foreach (var action in actions)
+            foreach (bool anonymous in new[] { false, true })
+                using (var scope = TestScope.Create(builder => builder
+                    .AddLogMonitor(log)
+                    .AddFakeUser(anonymous ? JobsCreatedByAnonymous : JobsCreatedByUser)))
                 {
-                    jobs.EnqueueAction(action.ActionParameter, action.ExecuteInUserContext, action.OptimizeDuplicates);
-                    rhetosJobIds.Add(GetLastJobId(log));
+                    var jobs = scope.Resolve<IBackgroundJobs>();
+
+                    foreach (var action in actions.Where(a => a.AnonymousUser == anonymous))
+                    {
+                        jobs.EnqueueAction(action.ActionParameter, action.ExecuteInUserContext, action.OptimizeDuplicates);
+                        rhetosJobIds.Add(GetLastJobId(log));
+                    }
+
+                    if (rhetosJobIds.Distinct().Count() != rhetosJobIds.Count)
+                        throw new InvalidOperationException($"Created duplicate job IDs.");
+
+                    scope.CommitAndClose();
                 }
-
-                if (rhetosJobIds.Distinct().Count() != actions.Count)
-                    throw new InvalidOperationException("Error in test setup, cannot detect all job IDs.");
-
-                scope.CommitAndClose();
-            }
             return rhetosJobIds;
         }
 

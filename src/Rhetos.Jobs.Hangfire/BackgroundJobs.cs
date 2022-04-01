@@ -86,7 +86,8 @@ namespace Rhetos.Jobs.Hangfire
 			{
 				Id = Guid.NewGuid(),
 				RecurringJobName = null,
-				ExecuteAsUser = executeInUserContext ? _userInfo.UserName : null,
+				ExecuteAsUser = executeInUserContext && _userInfo.IsUserRecognized ? _userInfo.UserName : null,
+				ExecuteAsAnonymous = executeInUserContext && !_userInfo.IsUserRecognized ? true : null, // The null value is considered false, to simplify job parameter serialization.
 				Parameter = parameter, // Might be updated later when applying jobAggregator.
 			};
 
@@ -107,6 +108,7 @@ namespace Rhetos.Jobs.Hangfire
 					schedule.ExecuterType == oldJob.ExecuterType
 					&& schedule.ParameterType == oldJob.ParameterType
 					&& schedule.Job.ExecuteAsUser == oldJob.Job.ExecuteAsUser
+					&& schedule.Job.ExecuteAsAnonymous == oldJob.Job.ExecuteAsAnonymous
 					&& schedule.AggregationGroup.Equals(oldJob.AggregationGroup));
 
 				if (lastJobIndex >= 0)
@@ -174,6 +176,7 @@ namespace Rhetos.Jobs.Hangfire
 				Id = _rhetosHangfireJobs.GetJobId(name) ?? Guid.NewGuid(),
 				RecurringJobName = name,
 				ExecuteAsUser = null,
+				ExecuteAsAnonymous = null,
 				Parameter = parameter,
 			};
 

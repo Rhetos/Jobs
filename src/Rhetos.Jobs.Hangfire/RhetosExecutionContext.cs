@@ -55,7 +55,7 @@ namespace Rhetos.Jobs.Hangfire
 			
 			try
 			{
-				using (var scope = _unitOfWorkFactory.CreateScope(builder => CustomizeScope(builder, job.ExecuteAsUser)))
+				using (var scope = _unitOfWorkFactory.CreateScope(builder => CustomizeScope(builder, job.ExecuteAsUser, job.ExecuteAsAnonymous)))
 				{
 					_logger.Trace(() => $"ExecuteJob TransactionScopeContainer initialized.|{job.GetLogInfo(typeof(TExecuter))}");
 
@@ -92,30 +92,44 @@ namespace Rhetos.Jobs.Hangfire
 			_logger.Trace(() => $"ExecuteJob completed.|{job.GetLogInfo(typeof(TExecuter))}");
 		}
 
-		private void CustomizeScope(ContainerBuilder builder, string userName = null)
+		private void CustomizeScope(ContainerBuilder builder, string userName = null, bool? executeAsAnonymous = null)
 		{
 			if (!string.IsNullOrWhiteSpace(userName))
 				builder.RegisterInstance(new JobExecuterUserInfo(userName)).As<IUserInfo>();
+			else if (executeAsAnonymous == true)
+				builder.RegisterInstance(new JobExecuterUserInfo()).As<IUserInfo>();
 			else if (!string.IsNullOrWhiteSpace(_options.ProcessUserName))
 				builder.RegisterInstance(new JobExecuterUserInfo(_options.ProcessUserName)).As<IUserInfo>();
 			else
 				builder.RegisterType(typeof(ProcessUserInfo)).As<IUserInfo>();
 		}
 
-		private class JobExecuterUserInfo : IUserInfo
-		{
-			public JobExecuterUserInfo(string userName)
-			{
-				UserName = userName;
-				IsUserRecognized = true;
-				Workstation = "Async job";
-			}
+        private class JobExecuterUserInfo : IUserInfo
+        {
+            private readonly string _userName;
 
-			public bool IsUserRecognized { get; }
-			public string UserName { get; }
+            /// <summary>
+            /// For anonymous user, set <paramref name="userName"/> to <see langword="null"/>.
+            /// </summary>
+            public JobExecuterUserInfo(string userName = null)
+            {
+                if (!string.IsNullOrWhiteSpace(userName))
+                {
+                    _userName = userName;
+                    IsUserRecognized = true;
+                    Workstation = "Async job";
+                }
+            }
+
+            public bool IsUserRecognized { get; }
+
+            public string UserName => IsUserRecognized ? _userName : throw new ClientException("This operation is not supported for anonymous user."); // Standard Rhetos UserName implementation with exception.
+			
 			public string Workstation { get; }
 
-			public string Report() { return UserName + "," + Workstation; }
-		}
-	}
+            public string Report() => ReportUserNameOrAnonymous() + "," + Workstation;
+
+            private string ReportUserNameOrAnonymous() => IsUserRecognized ? UserName : "<anonymous>";
+        }
+    }
 }

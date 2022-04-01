@@ -36,11 +36,19 @@ namespace Rhetos.Jobs.Hangfire
 
 		public string ExecuteAsUser { get; set; }
 
-		public TParameter Parameter { get; set; }
+        /// <summary>
+        /// The <see langword="null"/> value is considered <see langword="false"/>, to simplify job parameter serialization.
+        /// </summary>
+        public bool? ExecuteAsAnonymous { get; set; }
+
+        public TParameter Parameter { get; set; }
 
 		public string GetLogInfo(Type executerType)
 		{
-			var userInfo = string.IsNullOrWhiteSpace(ExecuteAsUser) ? "User not specified" : $"ExecuteInUserContext: {ExecuteAsUser}";
+			var userInfo =
+                !string.IsNullOrWhiteSpace(ExecuteAsUser) ? $"ExecuteAsUser: {ExecuteAsUser}"
+                : ExecuteAsAnonymous == true ? "ExecuteAsAnonymous"
+                : "User not specified";
 			return $"JobId: {Id}|{userInfo}|{executerType}|{Parameter}";
 		}
 	}

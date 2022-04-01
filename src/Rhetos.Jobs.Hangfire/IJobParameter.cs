@@ -32,6 +32,11 @@ namespace Rhetos.Jobs.Hangfire
 
         string ExecuteAsUser { get; }
 
+        /// <summary>
+        /// The <see langword="null"/> value is considered <see langword="false"/>, to simplify job parameter serialization.
+        /// </summary>
+        bool? ExecuteAsAnonymous { get; set; }
+
         string GetLogInfo(Type executerType);
     }
 }
