@@ -21,6 +21,7 @@ using Hangfire;
 using Hangfire.SqlServer;
 using Rhetos.Utilities;
 using System;
+using System.Data.SqlClient;
 
 namespace Rhetos.Jobs.Hangfire
 {
@@ -30,16 +31,37 @@ namespace Rhetos.Jobs.Hangfire
 	/// </summary>
 	public class RhetosHangfireInitialization
 	{
-		private readonly ConnectionString _connectionString;
+		private readonly string _connectionString;
 		private readonly RhetosJobHangfireOptions _options;
 
-		private static bool _initialized;
+        private static bool _initialized;
 		private static readonly object _initializationLock = new();
 
-		public RhetosHangfireInitialization(ConnectionString connectionString, RhetosJobHangfireOptions options)
+		public RhetosHangfireInitialization(ConnectionString connectionString, RhetosJobHangfireOptions options, DatabaseSettings databaseSettings, RhetosJobHangfireOptions rhetosJobHangfireOptions)
 		{
-			_connectionString = connectionString;
+			_connectionString = TrySetApplicationName(connectionString, databaseSettings, rhetosJobHangfireOptions);
+			
 			_options = options;
+		}
+
+		private static string TrySetApplicationName(string connectionString, DatabaseSettings databaseSettings, RhetosJobHangfireOptions rhetosJobHangfireOptions)
+		{
+			if (!rhetosJobHangfireOptions.SetConnectionStringApplicationName)
+				return connectionString;
+			if (databaseSettings.DatabaseLanguage != "MsSql")
+				return connectionString;
+			try
+			{
+				var sqlConnectionStringBuilder = new SqlConnectionStringBuilder(connectionString);
+				sqlConnectionStringBuilder.ApplicationName = $"{sqlConnectionStringBuilder.ApplicationName} Hangfire";
+				return sqlConnectionStringBuilder.ToString();
+			}
+#pragma warning disable CA1031 // Do not catch general exception types. This is just an optional information in connection string. It should not fail if the connection string format is not recognized.
+            catch
+#pragma warning restore CA1031 // Do not catch general exception types
+            {
+				return connectionString;
+			}
 		}
 
 		/// <summary>

@@ -45,6 +45,11 @@ namespace Rhetos.Jobs.Hangfire
 		/// </summary>
 		public string ProcessUserName { get; set; }
 
+		/// <summary>
+		/// Adds " Hangfire" suffix to the application name configured in connection string.
+		/// </summary>
+		public bool SetConnectionStringApplicationName { get; set; } = true;
+
 		#region Options from Hangfire.SqlServer.SqlServerStorageOptions
 
 		/// <summary>
