@@ -22,6 +22,7 @@ using Rhetos.TestCommon;
 using Rhetos.Utilities;
 using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Linq;
 
 namespace Rhetos.Jobs.Test
@@ -61,100 +62,99 @@ namespace Rhetos.Jobs.Test
 
         [TestMethod]
 		public void ExecuteInUserContext()
-		{
-			var actions = new List<(object ActionParameter, bool ExecuteInUserContext, bool OptimizeDuplicates, bool AnonymousUser)>
-			{
-				(new TestRhetosJobs.SimpleAction { Data = "ExecuteAsSystem " + Guid.NewGuid().ToString() }, false, false, false),
-				(new TestRhetosJobs.SimpleAction { Data = "ExecuteAsUser " + Guid.NewGuid().ToString() }, true, false, false),
-			};
+        {
+            var actions = new List<(object ActionParameter, bool ExecuteInUserContext, bool OptimizeDuplicates, bool AnonymousUser)>
+            {
+                (new TestRhetosJobs.SimpleAction { Data = "ExecuteAsSystem " + Guid.NewGuid().ToString() }, false, false, false),
+                (new TestRhetosJobs.SimpleAction { Data = "ExecuteAsUser " + Guid.NewGuid().ToString() }, true, false, false),
+            };
 
-			var rhetosJobIds = RhetosHangfireHelper.EnqueueActionJobs(actions);
-			var hangfireJobs = RhetosHangfireHelper.ReadCreatedJobsFromDatabase(rhetosJobIds);
+            List<(string ContextInfo, string ActionData)> dbLog = ExecuteJobsReturnDbLog(actions);
+            string expectedSystemUserReport = GetCurrentProcessUserReport();
 
-			// Read job results (the test action writes to Common.Log).
+            // Assert each jobs is executed with the correct user context:
 
-			RhetosHangfireHelper.WaitForJobsToComplete(hangfireJobs.Values.ToList());
+            string expectedContextUserReport = "Rhetos:" + RhetosHangfireHelper.JobsCreatedByUser.UserName + ",Async job";
+            var expectedJobsWithUserContext = new[]
+            {
+                "ExecuteAsSystem-" + expectedSystemUserReport,
+                "ExecuteAsUser-" + expectedContextUserReport
+            };
 
-			var actionData = actions.Select(action => ((TestRhetosJobs.SimpleAction)action.ActionParameter).Data).ToList();
+            var actualJobsWithUserContext = dbLog.Select(log => log.ActionData.Split(' ').First() + "-" + log.ContextInfo);
 
-			var dbLog = new List<(string ContextInfo, string ActionData)>();
-			string systemUserReport;
-			using (var scope = TestScope.Create())
-			{
-				var sql =
-					$@"SELECT ContextInfo, Description
+            Assert.AreEqual(
+                TestUtility.DumpSorted(expectedJobsWithUserContext),
+                TestUtility.DumpSorted(actualJobsWithUserContext));
+        }
+
+
+        [TestMethod]
+        public void ExecuteInUserContextAnonymous()
+        {
+            var actions = new List<(object ActionParameter, bool ExecuteInUserContext, bool OptimizeDuplicates, bool AnonymousUser)>
+            {
+                (new TestRhetosJobs.SimpleAction { Data = "ExecuteAsSystem " + Guid.NewGuid().ToString() }, false, false, true),
+                (new TestRhetosJobs.SimpleAction { Data = "ExecuteAsAnonymous " + Guid.NewGuid().ToString() }, true, false, true),
+            };
+
+            List<(string ContextInfo, string ActionData)> dbLog = ExecuteJobsReturnDbLog(actions);
+            string expectedSystemUserReport = GetCurrentProcessUserReport();
+
+            // Assert each jobs is executed with the correct user context:
+
+            string expectedAnonymousUserReport = "";
+            var expectedJobsWithUserContext = new[]
+            {
+                "ExecuteAsSystem-" + expectedSystemUserReport,
+                "ExecuteAsAnonymous-" + expectedAnonymousUserReport
+            };
+            var actualJobsWithUserContext = dbLog.Select(log => log.ActionData.Split(' ').First() + "-" + log.ContextInfo);
+
+            Assert.AreEqual(
+                TestUtility.DumpSorted(expectedJobsWithUserContext),
+                TestUtility.DumpSorted(actualJobsWithUserContext));
+        }
+
+        private static List<(string ContextInfo, string ActionData)> ExecuteJobsReturnDbLog(List<(object ActionParameter, bool ExecuteInUserContext, bool OptimizeDuplicates, bool AnonymousUser)> actions)
+        {
+            var rhetosJobIds = RhetosHangfireHelper.EnqueueActionJobs(actions);
+            var hangfireJobs = RhetosHangfireHelper.ReadCreatedJobsFromDatabase(rhetosJobIds);
+
+            // Read job results (the test action writes to Common.Log).
+
+            RhetosHangfireHelper.WaitForJobsToComplete(hangfireJobs.Values.ToList());
+
+            var actionData = actions.Select(action => ((TestRhetosJobs.SimpleAction)action.ActionParameter).Data).ToList();
+
+            var dbLog = new List<(string ContextInfo, string ActionData)>();
+            using (var scope = TestScope.Create())
+            {
+                var sql =
+                    $@"SELECT ContextInfo, Description
 					FROM Common.Log
 						WHERE TableName IS NULL
 							AND Action = 'TestRhetosJobs.SimpleAction'
 							AND Description IN ({string.Join(", ", actionData.Select(name => SqlUtility.QuoteText(name)))})";
 
-				var sqlExecuter = scope.Resolve<ISqlExecuter>();
-				sqlExecuter.ExecuteReader(sql, reader => dbLog.Add((reader.GetString(0), reader.GetString(1))));
+                var sqlExecuter = scope.Resolve<ISqlExecuter>();
+                sqlExecuter.ExecuteReader(sql, reader => dbLog.Add((GetNullableString(reader, 0), GetNullableString(reader, 1))));
+            }
+            return dbLog;
+        }
 
-				systemUserReport = scope.Resolve<IUserInfo>().Report();
-			}
+        private static string GetNullableString(DbDataReader reader, int index)
+        {
+            if (reader.IsDBNull(index))
+                return null;
+            else
+                return reader.GetString(index);
+        }
 
-			// Assert each jobs is executed with the correct user context:
-
-			var expectedJobsWithUserContext = new[]
-			{
-				"ExecuteAsSystem-Rhetos:" + systemUserReport,
-				"ExecuteAsUser-Rhetos:" + RhetosHangfireHelper.JobsCreatedByUser.UserName + ",Async job"
-			};
-			var actualJobsWithUserContext = dbLog.Select(log => log.ActionData.Split(' ').First() + "-" + log.ContextInfo);
-
-			Assert.AreEqual(
-				TestUtility.DumpSorted(expectedJobsWithUserContext),
-				TestUtility.DumpSorted(actualJobsWithUserContext));
-		}
-
-		[TestMethod]
-		public void ExecuteInUserContextAnonymous()
-		{
-			var actions = new List<(object ActionParameter, bool ExecuteInUserContext, bool OptimizeDuplicates, bool AnonymousUser)>
-			{
-				(new TestRhetosJobs.SimpleAction { Data = "ExecuteAsSystem " + Guid.NewGuid().ToString() }, false, false, true),
-				(new TestRhetosJobs.SimpleAction { Data = "ExecuteAsAnonymous " + Guid.NewGuid().ToString() }, true, false, true),
-			};
-
-			var rhetosJobIds = RhetosHangfireHelper.EnqueueActionJobs(actions);
-			var hangfireJobs = RhetosHangfireHelper.ReadCreatedJobsFromDatabase(rhetosJobIds);
-
-			// Read job results (the test action writes to Common.Log).
-
-			RhetosHangfireHelper.WaitForJobsToComplete(hangfireJobs.Values.ToList());
-
-			var actionData = actions.Select(action => ((TestRhetosJobs.SimpleAction)action.ActionParameter).Data).ToList();
-
-			var dbLog = new List<(string ContextInfo, string ActionData)>();
-			string systemUserReport;
-			using (var scope = TestScope.Create())
-			{
-				var sql =
-					$@"SELECT ContextInfo, Description
-					FROM Common.Log
-						WHERE TableName IS NULL
-							AND Action = 'TestRhetosJobs.SimpleAction'
-							AND Description IN ({string.Join(", ", actionData.Select(name => SqlUtility.QuoteText(name)))})";
-
-				var sqlExecuter = scope.Resolve<ISqlExecuter>();
-				sqlExecuter.ExecuteReader(sql, reader => dbLog.Add((reader.GetString(0), reader.GetString(1))));
-
-				systemUserReport = scope.Resolve<IUserInfo>().Report();
-			}
-
-			// Assert each jobs is executed with the correct user context:
-
-			var expectedJobsWithUserContext = new[]
-			{
-				"ExecuteAsSystem-Rhetos:" + systemUserReport,
-				"ExecuteAsAnonymous-Rhetos:" + RhetosHangfireHelper.JobsCreatedByAnonymous.Report()
-			};
-			var actualJobsWithUserContext = dbLog.Select(log => log.ActionData.Split(' ').First() + "-" + log.ContextInfo);
-
-			Assert.AreEqual(
-				TestUtility.DumpSorted(expectedJobsWithUserContext),
-				TestUtility.DumpSorted(actualJobsWithUserContext));
-		}
-	}
+        private static string GetCurrentProcessUserReport()
+        {
+            using var scope = TestScope.Create();
+            return "Rhetos:" + scope.Resolve<IUserInfo>().Report();
+        }
+    }
 }
