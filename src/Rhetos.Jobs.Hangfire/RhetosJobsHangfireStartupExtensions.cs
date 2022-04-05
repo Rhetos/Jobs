@@ -93,6 +93,9 @@ namespace Rhetos
         /// It creates a new instance of Hangfire <see cref="BackgroundJobServer"/>.
         /// It uses app settings from <see cref="RhetosJobHangfireOptions"/> for <see cref="BackgroundJobServerOptions"/>.
         /// The created <see cref="BackgroundJobServer"/> will start processing background jobs immediately.
+        /// <para>
+        /// Remove this method call if the background jobs need to be processed in a separate application (e.g. a Windows service), instead of the current application.
+        /// </para>
         /// </remarks>
         /// <param name="configureOptions">
         /// Use this parameter to run multiple background job servers with different Hangfire options.

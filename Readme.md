@@ -133,7 +133,7 @@ If you want to run the background jobs in the **Rhetos web application**:
 1. In `Startup.Configure` method, add:
    ```cs
    app.UseRhetosJobsFromConfiguration(); // Initialize recurring jobs.
-   app.UseRhetosHangfireServer(); // Start background job processing.
+   app.UseRhetosHangfireServer(); // Start background job processing in current application.
    ```
 2. If running the application on IIS, follow the instructions in section
    [Making ASP.NET Core application always running on IIS](https://docs.hangfire.io/en/latest/deployment-to-production/making-aspnet-app-always-running.html#making-asp-net-core-application-always-running-on-iis).

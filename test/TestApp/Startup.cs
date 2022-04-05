@@ -80,7 +80,7 @@ namespace TestApp
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/rhetos/swagger.json", "Rhetos REST API"));
             }
 
-            app.UseRhetosHangfireServer(); // Start background job processing.
+            app.UseRhetosHangfireServer(); // Start background job processing in current application.
 
             app.UseHttpsRedirection();
 
