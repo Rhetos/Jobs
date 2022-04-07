@@ -18,6 +18,7 @@
 */
 
 using Autofac;
+using Hangfire;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -81,6 +82,7 @@ namespace TestApp
             }
 
             app.UseRhetosHangfireServer(); // Start background job processing in current application.
+            app.UseHangfireDashboard();
 
             app.UseHttpsRedirection();
 
@@ -89,10 +91,11 @@ namespace TestApp
             app.UseAuthorization();
 
             app.UseRhetosRestApi();
-
+            
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
+                endpoints.MapHangfireDashboard();
             });
         }
     }

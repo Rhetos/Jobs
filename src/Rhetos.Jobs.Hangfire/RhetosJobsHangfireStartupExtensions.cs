@@ -35,7 +35,7 @@ namespace Rhetos
     public static class RhetosJobsHangfireStartupExtensions
 	{
         /// <summary>
-        /// Adds required Rhetos components for creating background jobs, and background jobs processing.
+        /// Adds required Rhetos and HangFire components for creating background jobs, and background jobs processing.
         /// </summary>
         /// <remarks>
         /// Calling this method is enough to allow creating background jobs in the current application.
@@ -63,7 +63,26 @@ namespace Rhetos
                         containerBuilder.RegisterType<RecurringJobsFromConfigurationOnStartup>();
                     }));
 
+            AddComponentsForHangfireDashboard(builder);
+
             return builder;
+        }
+
+        private static void AddComponentsForHangfireDashboard(RhetosServiceCollectionBuilder builder)
+        {
+            // AddHangfire method call is not needed for job scheduling and processing. It is needed for HangFire dashboard.
+            // It seems that the dashboard depends on DI components, while other features use GlobalConfiguration if available (see method InitializeGlobalConfiguration).
+            builder.Services.AddHangfire(_ => { });
+
+            // Overrides IGlobalConfiguration resolver to call Rhetos Hangfire initialization before returning the GlobalConfiguration for HangFire dashboard.
+            // This is needed for apps that do not call UseRhetosHangfireServer() or have some other way of triggering RhetosHangfireInitialization.
+            builder.Services.AddSingleton<IGlobalConfiguration>(serviceProvider =>
+            {
+                var rhetosHost = serviceProvider.GetRequiredService<RhetosHost>();
+                var rhetosHangfireInitialization = rhetosHost.GetRootContainer().Resolve<RhetosHangfireInitialization>();
+                rhetosHangfireInitialization.InitializeGlobalConfiguration();
+                return GlobalConfiguration.Configuration;
+            });
         }
 
         /// <summary>
