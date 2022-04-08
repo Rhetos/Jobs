@@ -1,5 +1,11 @@
 # Rhetos.Jobs Release notes
 
+## 5.1.0 (2022-04-08)
+
+* Bugfix: Hangfire Dashboard startup error "Unable to find the required services", missing AddHangfire (issue #1).
+* Support for anonymous user with executeInUserContext option.
+* The application name in database connection string is extended with " Hangfire" suffix, to help with database debugging (configurable).
+
 ## 5.0.0 (2022-03-25)
 
 ### Breaking changes
