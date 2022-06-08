@@ -48,6 +48,8 @@ namespace Rhetos.Jobs.Hangfire
 		{
 			if (!rhetosJobHangfireOptions.SetConnectionStringApplicationName)
 				return connectionString;
+			if (string.IsNullOrEmpty(connectionString))
+                return connectionString;
 			if (databaseSettings.DatabaseLanguage != "MsSql")
 				return connectionString;
 			try
