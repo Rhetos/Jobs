@@ -1,5 +1,9 @@
 # Rhetos.Jobs Release notes
 
+## 5.2.0 (2022-07-06)
+
+* Better error reporting for missing connection string.
+
 ## 5.1.0 (2022-04-08)
 
 * Bugfix: Hangfire Dashboard startup error "Unable to find the required services", missing AddHangfire (issue #1).
