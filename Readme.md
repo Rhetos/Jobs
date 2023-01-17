@@ -19,7 +19,7 @@ Contents:
    2. [Configuration](#configuration)
    3. [Recurring jobs on Hangfire](#recurring-jobs-on-hangfire)
    4. [Adding Hangfire Dashboard UI](#adding-hangfire-dashboard-ui)
-   5. [Running job server in unit tests and CLI utilities](#running-job-server-in-unit-tests-and-cli-utilities)
+   5. [Running job server in a separate CLI application](#running-job-server-in-a-separate-cli-application)
    6. [Troubleshooting](#troubleshooting)
       1. [ThreadAbortException](#threadabortexception)
 3. [How to contribute](#how-to-contribute)
@@ -184,7 +184,7 @@ see [Hangfire recurring tasks under minute](https://stackoverflow.com/questions/
 See "Adding Dashboard UI" in Hangfire documentation:
 <https://docs.hangfire.io/en/latest/getting-started/aspnet-core-applications.html#adding-dashboard-ui>
 
-### Running job server in unit tests and CLI utilities
+### Running job server in a separate CLI application
 
 You can create a separate application to run the background jobs,
 for example a Windows service or a CLI utility,
