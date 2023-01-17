@@ -192,33 +192,24 @@ instead of running them directly in the Rhetos web application.
 These utility applications will use Rhetos app's context and configuration
 when executing the jobs.
 
-Creating a "job runner" utility for your project:
+**Creating** a "job runner" utility for your project:
 
-1. Create the "job runner" console application and add a project reference to your Rhetos application.
-2. Add the following text in the csproj file to suppress Rhetos build tasks in the job runner:
+1. Create the "job runner" console application
+2. Add a project reference to your Rhetos application.
+   * Alternatively, the job runner may be used without the build reference to the main application,
+     but in that case you might need to override the job runner's deps.json file with the main app's deps.json file
+     to avoid "Could not load file or assembly" exception.
+3. Add the following text in the csproj file to suppress Rhetos build tasks in the job runner:
    ```xml
    <PropertyGroup>
      <RhetosBuild>false</RhetosBuild>
      <RhetosDeploy>false</RhetosDeploy>
    </PropertyGroup>
    ```
-3. Copy the content of `Program` class from demo JobRunner app: [Program.cs](https://github.com/Rhetos/Jobs/blob/master/Tools/JobRunner/Program.cs).
+4. Copy the content of `Program` class from demo JobRunner app:
+   [Program.cs](https://github.com/Rhetos/Jobs/blob/master/Tools/JobRunner/Program.cs).
 
-Troubleshooting job runner:
-
-* If the job runner fails on startup with exception *"Could not load file or assembly..."*, it might be necessary to either (1) add a project depedency from job runner to the main app, or (2) configure the job runner's `.deps.json` file by overwriting it with the main application's `.deps.json` file:
-
-   ```xml
-   <ItemGroup>
-     <ProjectReference Include="..\JobRunner\JobRunner.csproj" />
-   </ItemGroup>
-
-   <Target Name="FixHangfireServerDeps" AfterTargets="Build">
-     <Copy SourceFiles="$(OutputPath)\Ctx.Core.WebApi.deps.json" DestinationFiles="$(OutputPath)\JobRunner.deps.json" SkipUnchangedFiles="true" />
-   </Target>
-   ```
-
-Remarks:
+If needed, you can customize Hangfire **configuration** for job runner to be different from the main app:
 
 * `CreateHangfireJobServer()` method in Program.cs supports configuring `Hangfire.BackgroundJobServerOptions`.
   The options are automatically initialized from the main app settings (see `RhetosJobHangfireOptions` class),
