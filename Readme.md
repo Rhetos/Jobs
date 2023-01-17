@@ -204,13 +204,33 @@ Creating a "job runner" utility for your project:
    ```
 3. Copy the content of `Program` class from demo JobRunner app: [Program.cs](https://github.com/Rhetos/Jobs/blob/master/Tools/JobRunner/Program.cs).
 
+Troubleshooting job runner:
+
+* If the job runner fails on startup with exception *"Could not load file or assembly..."*, it might be necessary to either (1) add a project depedency from job runner to the main app, or (2) configure the job runner's `.deps.json` file by overwriting it with the main application's `.deps.json` file:
+
+   ```xml
+   <ItemGroup>
+     <ProjectReference Include="..\JobRunner\JobRunner.csproj" />
+   </ItemGroup>
+
+   <Target Name="FixHangfireServerDeps" AfterTargets="Build">
+     <Copy SourceFiles="$(OutputPath)\Ctx.Core.WebApi.deps.json" DestinationFiles="$(OutputPath)\JobRunner.deps.json" SkipUnchangedFiles="true" />
+   </Target>
+   ```
+
 Remarks:
 
-* CreateHangfireJobServer supports parameter for configuring Hangfire.BackgroundJobServerOptions.
-  The options are initialized from app settings (see RhetosJobHangfireOptions), and can be modified
-  by this delegate.
-* As an alternative to `rhetosJobServerFactory.CreateHangfireJobServer`, you can create and configure Hangfire.BackgroundJobServer
-  directly, without automatically reading BackgroundJobServerOptions from app settings.
+* `CreateHangfireJobServer()` method in Program.cs supports configuring `Hangfire.BackgroundJobServerOptions`.
+  The options are automatically initialized from the main app settings (see `RhetosJobHangfireOptions` class),
+  and then modified by this delegate, for example:
+  ```cs
+  rhetosJobServerFactory.CreateHangfireJobServer(o => o.Queues = new[] { "priority-queue" })
+  ````
+* As an alternative to using `CreateHangfireJobServer()`, you can create and configure `Hangfire.BackgroundJobServer`
+  directly, without automatically reading `BackgroundJobServerOptions` from app settings.
+
+Testing:
+
 * You can test the job runner utility with a LINQPad script that creates the jobs,
   for example see [AddJob.linq](https://github.com/Rhetos/Jobs/blob/master/test/TestApp/LinqPad/AddJob.linq).
 
