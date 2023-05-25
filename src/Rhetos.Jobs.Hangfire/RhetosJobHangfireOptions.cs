@@ -99,5 +99,13 @@ namespace Rhetos.Jobs.Hangfire
 		/// Array of queue names which will be processed by this instance of Hangfire server. Default is '["default"]'.
 		/// </summary>
 		public string[] Queues { get; set; } = {"default"};
+		/// <summary>
+		/// Default value is 10. Added to GlobalJobFilters.Filters via AutomaticRetryAttribute. For usage of the AutomaticRetryAttribute see Hangfire documentation.
+		/// </summary>
+		public int AutomaticRetryAttempts { get; set; } = 10;
+		/// <summary>
+		/// Delays in seconds for retry jobs (i.e. "1, 60, 3600"). Default value is Hangfire default. For usage of the default algorithm see Hangfire documentation.
+		/// </summary>
+		public string DelaysInSeconds { get; set; }
 	}
 }
