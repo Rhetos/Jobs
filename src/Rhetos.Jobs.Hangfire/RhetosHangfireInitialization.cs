@@ -21,6 +21,7 @@ using Hangfire;
 using Hangfire.SqlServer;
 using Rhetos.Utilities;
 using System;
+using System.Linq;
 
 namespace Rhetos.Jobs.Hangfire
 {
@@ -68,8 +69,17 @@ namespace Rhetos.Jobs.Hangfire
 								DisableGlobalLocks = _options.DisableGlobalLocks
 							});
 
+						var automaticRetryAttribute = new AutomaticRetryAttribute { Attempts = _options.AutomaticRetryAttempts };
+						if (!string.IsNullOrEmpty(_options.DelaysInSeconds))
+							automaticRetryAttribute.DelaysInSeconds = ParseDelaysInSeconds();
+
+						GlobalJobFilters.Filters.Add(automaticRetryAttribute);
+
 						_initialized = true;
 					}
 		}
+
+		private int[] ParseDelaysInSeconds() => 
+			_options.DelaysInSeconds.Split(',').Select(x => int.Parse(x)).ToArray();
 	}
 }
