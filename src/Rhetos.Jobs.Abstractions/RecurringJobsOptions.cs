@@ -72,5 +72,6 @@ namespace Rhetos.Jobs
         public string CronExpression { get; set; }
         public string Action { get; set; }
         public string Queue { get; set; }
+        public string RunAs { get; set; }
     }
 }

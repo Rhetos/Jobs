@@ -89,7 +89,7 @@ namespace Rhetos.Jobs
                         $" There is no DSL Action with full name '{job.Value.Action}' in this application.");
 
                 _backgroundJobs.SetRecurringJob<ActionJobExecuter, ActionJobParameter>(
-                    jobName, job.Value.CronExpression, ActionJobParameter.FromActionName(job.Value.Action), job.Value.Queue);
+                    jobName, job.Value.CronExpression, ActionJobParameter.FromActionName(job.Value.Action), job.Value.Queue, job.Value.RunAs);
             }
         }
 

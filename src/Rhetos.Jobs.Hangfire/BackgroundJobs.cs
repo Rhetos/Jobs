@@ -160,7 +160,7 @@ namespace Rhetos.Jobs.Hangfire
 		/// </summary>
 		private static bool DefaultAggregator<TParameter>(TParameter oldJob, ref TParameter newJob) => true;
 
-		public void SetRecurringJob<TExecuter, TParameter>(string name, string cronExpression, TParameter parameter, string queue = null)
+		public void SetRecurringJob<TExecuter, TParameter>(string name, string cronExpression, TParameter parameter, string queue = null, string runAs = null)
 			where TExecuter : IJobExecuter<TParameter>
 		{
 			_hangfireInitialization.InitializeGlobalConfiguration();
@@ -175,7 +175,7 @@ namespace Rhetos.Jobs.Hangfire
 			{
 				Id = _rhetosHangfireJobs.GetJobId(name) ?? Guid.NewGuid(),
 				RecurringJobName = name,
-				ExecuteAsUser = null,
+				ExecuteAsUser = runAs,
 				ExecuteAsAnonymous = null,
 				Parameter = parameter,
 			};

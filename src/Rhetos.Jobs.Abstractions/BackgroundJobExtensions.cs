@@ -75,12 +75,16 @@ namespace Rhetos.Dom.DefaultConcepts
         /// <param name="queue">
         /// Name of the queue. Default is null.
         /// </param>
-        public static void SetRecurringAction(this IBackgroundJobs backgroundJobs, string jobName, object action, string cronExpression, string queue = null)
+        /// <param name="runAs">
+		/// The job will run in a context of the specified Rhetos app user.
+		/// The provided value should exist in the table Common.Principal, column Name.
+		/// </param>
+        public static void SetRecurringAction(this IBackgroundJobs backgroundJobs, string jobName, object action, string cronExpression, string queue = null, string runAs = null)
         {
             var jobParameters = ActionJobParameter.FromActionInstance(action);
 
             backgroundJobs.SetRecurringJob<ActionJobExecuter, ActionJobParameter>(
-                jobName, cronExpression, jobParameters, queue);
+                jobName, cronExpression, jobParameters, queue, runAs);
         }
     }
 }

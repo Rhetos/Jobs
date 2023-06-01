@@ -95,13 +95,14 @@ Recurring jobs can be specified in the application settings, for example in apps
     "Jobs": {
       "Recurring": {
         "RecurringJob1": {
-          "CronExpression": "* * * * *",
-          "Action": "SomeModule.RecurringAction1Minute"
+          "CronExpression": "0 3 * * 6", // Run at 3 AM each Saturday.
+          "Action": "SomeModule.RecurringActionWeekly3AM"
         },
         "RecurringJob2": {
-          "CronExpression": "0/2 * * * *",
-          "Action": "SomeModule.RecurringAction2Minutes",
-          "Queue": "default"
+          "CronExpression": "0 0/2 * * *", // Run every 2 hours.
+          "Action": "SomeModule.RecurringAction2Hours",
+          "Queue": "default",
+          "RunAs": "SomeUserName" // Name from Common.Principal.
         }
       }
     }
