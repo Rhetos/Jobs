@@ -22,6 +22,7 @@ using Hangfire.SqlServer;
 using Rhetos.Utilities;
 using System;
 using System.Data.SqlClient;
+using System.Linq;
 
 namespace Rhetos.Jobs.Hangfire
 {
@@ -93,10 +94,19 @@ namespace Rhetos.Jobs.Hangfire
 								DisableGlobalLocks = _options.DisableGlobalLocks
 							});
 
+						var automaticRetryAttribute = new AutomaticRetryAttribute { Attempts = _options.AutomaticRetryAttempts };
+						if (!string.IsNullOrEmpty(_options.DelaysInSeconds))
+							automaticRetryAttribute.DelaysInSeconds = ParseDelaysInSeconds();
+
+						GlobalJobFilters.Filters.Add(automaticRetryAttribute);
+
 #pragma warning disable S2696 // Instance members should not write to "static" fields. This is a standard double-checked locking.
 						_initialized = true;
 #pragma warning restore S2696 // Instance members should not write to "static" fields
                     }
 		}
+
+		private int[] ParseDelaysInSeconds() => 
+			_options.DelaysInSeconds.Split(',').Select(x => int.Parse(x)).ToArray();
 	}
 }

@@ -19,6 +19,12 @@
    See [Readme.md](Readme.md) for new setup instructions.
 3. Renamed class `RhetosJobServer` to `RhetosJobServerFactory`.
 
+## 1.2.0 (2023-06-01)
+
+*(Changes from v1.2.0 are not included in releases v5.0.0 - v5.2.0)*
+
+* Added `Rhetos:Jobs:Hangfire:AutomaticRetryAttempts` option to control how many times Hangfire will try to execute method if error occurs (default value is 10). Also, you can control the time between each unsuccessfull execution with `Rhetos:Jobs:Hangfire:DelaysInSeconds` option (if empty, Hangfire default exponential delay time will apply). 
+
 ## 1.1.0 (2022-02-14)
 
 * Recurring jobs supported, specified by a [CRON expression](https://en.wikipedia.org/wiki/Cron#CRON_expression).

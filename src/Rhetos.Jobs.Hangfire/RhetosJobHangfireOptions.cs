@@ -124,5 +124,13 @@ namespace Rhetos.Jobs.Hangfire
 #pragma warning restore CA1819 // Properties should not return arrays
 
         #endregion
+		/// <summary>
+		/// Default value is 10. Added to GlobalJobFilters.Filters via AutomaticRetryAttribute. For usage of the AutomaticRetryAttribute see Hangfire documentation.
+		/// </summary>
+		public int AutomaticRetryAttempts { get; set; } = 10;
+		/// <summary>
+		/// Delays in seconds for retry jobs (i.e. "1, 60, 3600"). Default value is Hangfire default. For usage of the default algorithm see Hangfire documentation.
+		/// </summary>
+		public string DelaysInSeconds { get; set; }
     }
 }
