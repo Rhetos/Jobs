@@ -1,5 +1,11 @@
 # Rhetos.Jobs Release notes
 
+## 5.3.0 (2023-06-01)
+
+* Added a recurring job option "RunAs". If specified, the job will run in a context of the specified Rhetos app user. See [Readme.md](Readme.md).
+* Changes from release 1.3.0:
+  * Added `Rhetos:Jobs:Hangfire:AutomaticRetryAttempts` option to control how many times Hangfire will try to execute method if error occurs (default value is 10). Also, you can control the time between each unsuccessfull execution with `Rhetos:Jobs:Hangfire:DelaysInSeconds` option (if empty, Hangfire default exponential delay time will apply). 
+
 ## 5.2.0 (2022-07-06)
 
 * Better error reporting for missing connection string.
