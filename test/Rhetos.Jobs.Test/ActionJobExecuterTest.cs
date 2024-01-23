@@ -130,15 +130,16 @@ namespace Rhetos.Jobs.Test
             var dbLog = new List<(string ContextInfo, string ActionData)>();
             using (var scope = TestScope.Create())
             {
+                var context = scope.Resolve<Common.ExecutionContext>();
+
                 var sql =
                     $@"SELECT ContextInfo, Description
 					FROM Common.Log
 						WHERE TableName IS NULL
 							AND Action = 'TestRhetosJobs.SimpleAction'
-							AND Description IN ({string.Join(", ", actionData.Select(name => SqlUtility.QuoteText(name)))})";
+							AND Description IN ({string.Join(", ", actionData.Select(context.SqlUtility.QuoteText))})";
 
-                var sqlExecuter = scope.Resolve<ISqlExecuter>();
-                sqlExecuter.ExecuteReader(sql, reader => dbLog.Add((GetNullableString(reader, 0), GetNullableString(reader, 1))));
+                context.SqlExecuter.ExecuteReader(sql, reader => dbLog.Add((GetNullableString(reader, 0), GetNullableString(reader, 1))));
             }
             return dbLog;
         }

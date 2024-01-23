@@ -5,6 +5,6 @@
 	{
 		Integer DurationSeconds;
 
-		RepositoryUses _backgroundJobs 'Rhetos.Jobs.IBackgroundJobs, Rhetos.Jobs.Abstractions';
+		RepositoryUses _backgroundJobs 'Rhetos.Jobs.IBackgroundJobs';
 	}
 }

@@ -29,10 +29,12 @@ namespace Rhetos.Jobs.Hangfire
     public class RhetosHangfireJobs
 	{
         private readonly ISqlExecuter _sqlExecuter;
+        private readonly ISqlUtility _sqlUtility;
 
-        public RhetosHangfireJobs(ISqlExecuter sqlExecuter)
+        public RhetosHangfireJobs(ISqlExecuter sqlExecuter, ISqlUtility sqlUtility)
         {
             _sqlExecuter = sqlExecuter;
+            _sqlUtility = sqlUtility;
         }
 
         /// <remarks>
@@ -42,7 +44,7 @@ namespace Rhetos.Jobs.Hangfire
         {
             string commmand =
 $@"IF NOT EXISTS (SELECT TOP 1 1 FROM Common.HangfireJob WITH (READCOMMITTEDLOCK, ROWLOCK) WHERE ID = '{id}')
-    INSERT INTO Common.HangfireJob (ID, Name) VALUES ('{id}', {SqlUtility.QuoteText(name)})";
+    INSERT INTO Common.HangfireJob (ID, Name) VALUES ('{id}', {_sqlUtility.QuoteText(name)})";
             _sqlExecuter.ExecuteSql(commmand);
         }
 
@@ -69,7 +71,7 @@ $@"IF NOT EXISTS (SELECT TOP 1 1 FROM Common.HangfireJob WITH (READCOMMITTEDLOCK
         public Guid? GetJobId(string name)
         {
             Guid? id = null;
-            var command = $"SELECT ID FROM Common.HangfireJob WITH (READCOMMITTEDLOCK) WHERE Name = {SqlUtility.QuoteText(name)}";
+            var command = $"SELECT ID FROM Common.HangfireJob WITH (READCOMMITTEDLOCK) WHERE Name = {_sqlUtility.QuoteText(name)}";
             _sqlExecuter.ExecuteReader(command, reader => id = reader.GetGuid(0));
             return id;
         }

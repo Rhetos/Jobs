@@ -66,7 +66,7 @@ Module Test
           }
         }';
     }
-    RepositoryUses _backgroundJob 'Rhetos.Jobs.IBackgroundJobs, Rhetos.Jobs.Abstractions';
+    RepositoryUses _backgroundJob 'Rhetos.Jobs.IBackgroundJobs';
   }
   
   Action ProcessSomething

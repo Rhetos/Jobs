@@ -101,17 +101,9 @@ namespace Rhetos.Jobs
         {
             try
             {
-                _sqlExecuter.ExecuteSql(
-                    $@"DECLARE @lockResult int;
-                    EXEC @lockResult = sp_getapplock {SqlUtility.QuoteText(key)}, 'Exclusive';
-                    IF @lockResult < 0
-                    BEGIN
-                        RAISERROR('{key} lock.', 16, 10);
-                        ROLLBACK;
-                        RETURN;
-                    END");
+                _sqlExecuter.GetDbLock(key);
             }
-            catch (FrameworkException ex) when (ex.Message.TrimEnd().EndsWith($"{key} lock.", StringComparison.Ordinal))
+            catch (UserException ex) when (ex.Message.Contains("currently unavailable"))
             {
                 throw new InvalidOperationException(
                     "Cannot updated the recurring jobs, because the this data is locked by another process that is still running.",

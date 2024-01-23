@@ -21,7 +21,7 @@
 		backgroundJobs.EnqueueAction(action, false, true);
 	}'
 	{
-		RepositoryUses 'backgroundJobs' 'Rhetos.Jobs.IBackgroundJobs, Rhetos.Jobs.Abstractions';
+		RepositoryUses 'backgroundJobs' 'Rhetos.Jobs.IBackgroundJobs';
 	}
 	
 	Action HappyWithWait '(parameters, repository, userInfo) => 
@@ -34,7 +34,7 @@
 		// throw new Rhetos.UserException("Ne može");
 	}'
 	{
-		RepositoryUses 'backgroundJobs' 'Rhetos.Jobs.IBackgroundJobs, Rhetos.Jobs.Abstractions';
+		RepositoryUses 'backgroundJobs' 'Rhetos.Jobs.IBackgroundJobs';
 	}
 
 	Action TheJob '(parameters, repository, userInfo) => 
