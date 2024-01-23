@@ -2,7 +2,7 @@
   "profiles": {
     "JobRunner": {
       "commandName": "Project",
-      "commandLineArgs": "\"..\\..\\..\\..\\..\\test\\TestApp\\bin\\debug\\net5.0\\TestApp.dll\""
+      "commandLineArgs": "\"..\\..\\..\\..\\..\\test\\TestApp\\bin\\debug\\net8.0\\TestApp.dll\""
     }
   }
 }

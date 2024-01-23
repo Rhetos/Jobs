@@ -45,7 +45,7 @@ namespace Rhetos.Jobs.Test
         /// Reusing a single shared static DI container between tests, to reduce initialization time for each test.
         /// Each test should create a child scope with <see cref="TestScope.Create"/> method to start a 'using' block.
         /// </summary>
-        public static readonly RhetosHost RhetosHost = RhetosHost.CreateFrom(@"..\..\..\..\TestApp\bin\Debug\net5.0\TestApp.dll",
+        public static readonly RhetosHost RhetosHost = RhetosHost.CreateFrom(@"..\..\..\..\TestApp\bin\Debug\net8.0\TestApp.dll",
             hostBuilder => hostBuilder.ConfigureContainer(containerBuilder => containerBuilder.RegisterType<ProcessUserInfo>().As<IUserInfo>()));
 
         /// <summary>

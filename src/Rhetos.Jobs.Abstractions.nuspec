@@ -12,15 +12,15 @@
     <releaseNotes>
     </releaseNotes>
     <dependencies>
-      <dependency id="Rhetos" version="5.0.0" />
-      <dependency id="Rhetos.CommonConcepts" version="5.0.0" />
+      <dependency id="Rhetos" version="6.0.0-dev24011711054c6feb" />
+      <dependency id="Rhetos.CommonConcepts" version="6.0.0-dev24011711054c6feb" />
     </dependencies>
   </metadata>
   <files>
     <file src="..\Readme.md" target="" />
     <file src="..\ChangeLog.md" target="" />
-    <file src="Rhetos.Jobs.Abstractions\bin\Debug\net5.0\Rhetos.Jobs.Abstractions.dll" target="lib\net5.0" />
-    <file src="Rhetos.Jobs.Abstractions\bin\Debug\net5.0\Rhetos.Jobs.Abstractions.pdb" target="lib\net5.0" />
-    <file src="Rhetos.Jobs.Abstractions\bin\Debug\net5.0\Rhetos.Jobs.Abstractions.xml" target="lib\net5.0" />
+    <file src="Rhetos.Jobs.Abstractions\bin\Debug\net8.0\Rhetos.Jobs.Abstractions.dll" target="lib\net8.0" />
+    <file src="Rhetos.Jobs.Abstractions\bin\Debug\net8.0\Rhetos.Jobs.Abstractions.pdb" target="lib\net8.0" />
+    <file src="Rhetos.Jobs.Abstractions\bin\Debug\net8.0\Rhetos.Jobs.Abstractions.xml" target="lib\net8.0" />
   </files>
 </package>
