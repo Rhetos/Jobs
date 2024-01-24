@@ -70,10 +70,10 @@ namespace Rhetos.Jobs.Test
             };
 
             List<(string ContextInfo, string ActionData)> dbLog = ExecuteJobsReturnDbLog(actions);
-            string expectedSystemUserReport = GetCurrentProcessUserReport();
 
             // Assert each jobs is executed with the correct user context:
 
+            string expectedSystemUserReport = GetCurrentProcessUserReport();
             string expectedContextUserReport = "Rhetos:" + RhetosHangfireHelper.JobsCreatedByUser.UserName + ",Async job";
             var expectedJobsWithUserContext = new[]
             {
@@ -88,7 +88,6 @@ namespace Rhetos.Jobs.Test
                 TestUtility.DumpSorted(actualJobsWithUserContext));
         }
 
-
         [TestMethod]
         public void ExecuteInUserContextAnonymous()
         {
@@ -99,11 +98,11 @@ namespace Rhetos.Jobs.Test
             };
 
             List<(string ContextInfo, string ActionData)> dbLog = ExecuteJobsReturnDbLog(actions);
-            string expectedSystemUserReport = GetCurrentProcessUserReport();
 
             // Assert each jobs is executed with the correct user context:
 
-            string expectedAnonymousUserReport = "";
+            string expectedSystemUserReport = GetCurrentProcessUserReport();
+            string expectedAnonymousUserReport = "Rhetos:";
             var expectedJobsWithUserContext = new[]
             {
                 "ExecuteAsSystem-" + expectedSystemUserReport,
