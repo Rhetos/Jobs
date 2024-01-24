@@ -26,6 +26,7 @@ using Rhetos.Jobs;
 using Rhetos.Jobs.Hangfire;
 using Rhetos.Utilities;
 using System;
+using System.Reflection;
 
 namespace Rhetos
 {
@@ -65,7 +66,35 @@ namespace Rhetos
 
             AddComponentsForHangfireDashboard(builder);
 
+            FixHangfireReflectionTypeLoadException();
+
             return builder;
+        }
+
+        private static void FixHangfireReflectionTypeLoadException()
+        {
+            // HACK: This workaround is a hack to avoid issues with combination of Hangfire.SqlServer v1.8.7, .NET 8, and System.Data.SqlClient v4.8.6.
+            // Hangfire.BackgroundJob.Enqueue throws an internal exception: System.Reflection.ReflectionTypeLoadException: 'Unable to load one or more of the requested types. Could not load type 'SqlGuidCaster' from assembly 'System.Data.SqlClient, Version=4.6.1.6, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a' because it contains an object field at offset 0 that is incorrectly aligned or overlapped by a non-object field.'
+            // The exception is later caught and ignored in Hangfire code, but the indented feature is not used () witch hinders performance,
+            // and unceasing runtime exceptions make debugging more complicated.
+            // With this fix, the exception may still happen occasionally (not due to Hangfire), but less often.
+
+            // TODO: Remove this method when the issue is corrected in Hangfire or .NET 8 or System.Data.SqlClient, or when System.Data.SqlClient is no longer used.
+
+            Assembly hangfireAssembly = typeof(Hangfire.SqlServer.IPersistentJobQueue).Assembly;
+            Type hangfireSqlCommandSet = hangfireAssembly.GetType("Hangfire.SqlServer.SqlCommandSet");
+            FieldInfo hangfireSqlCommandSetTypeField = hangfireSqlCommandSet.GetField("SqlCommandSetType", BindingFlags.Static | BindingFlags.NonPublic);
+            object hangfireSqlCommandSetTypeObject = hangfireSqlCommandSetTypeField.GetValue(null);
+            var hangfireSqlCommandSetType = hangfireSqlCommandSetTypeObject as System.Collections.Concurrent.ConcurrentDictionary<Assembly, Type>;
+            if (hangfireSqlCommandSetType == null)
+                throw new InvalidOperationException($"Unexpected version of Hangfire. Check if this hack is needed in the new version. Maybe the method {nameof(FixHangfireReflectionTypeLoadException)} can now be removed.");
+
+            Assembly sqlClientAssembly = typeof(System.Data.SqlClient.SqlConnection).Assembly;
+            Type sqlClientSqlCommandSet = sqlClientAssembly.GetType("System.Data.SqlClient.SqlCommandSet");
+            if (sqlClientSqlCommandSet == null)
+                throw new InvalidOperationException($"Unexpected version of System.Data.SqlClient. Check if this hack is needed in the new version. Maybe the method {nameof(FixHangfireReflectionTypeLoadException)} can now be removed.");
+
+            hangfireSqlCommandSetType.TryAdd(sqlClientAssembly, sqlClientSqlCommandSet);
         }
 
         private static void AddComponentsForHangfireDashboard(RhetosServiceCollectionBuilder builder)
