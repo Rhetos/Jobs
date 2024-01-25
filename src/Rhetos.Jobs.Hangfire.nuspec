@@ -5,20 +5,21 @@
     <version>6.0.0-dev</version>
     <authors>Omega software</authors>
     <owners>Omega software</owners>
+    <license type="expression">AGPL-3.0-only</license>
     <projectUrl>https://github.com/rhetos/rhetos</projectUrl>
     <description>This package is a plugin for Rhetos development platform.</description>
     <copyright>Copyright Omega software 2019</copyright>
     <tags>Rhetos plugin</tags>
-    <releaseNotes>
-</releaseNotes>
     <dependencies>
-      <dependency id="Rhetos" version="6.0.0-dev24011711054c6feb" />
-      <dependency id="Rhetos.CommonConcepts" version="6.0.0-dev24011711054c6feb" />
-      <dependency id="Rhetos.Jobs.Abstractions" version="6.0.0-dev" />
-      <dependency id="Hangfire.AspNetCore" version="1.8.9" />
-      <dependency id="HangFire.Autofac" version="2.5.0" />
-      <dependency id="Hangfire.Core" version="1.8.9" />
-      <dependency id="Hangfire.SqlServer" version="1.8.9" />
+      <group targetFramework="net8.0">
+        <dependency id="Rhetos" version="6.0.0-dev24011711054c6feb" />
+        <dependency id="Rhetos.CommonConcepts" version="6.0.0-dev24011711054c6feb" />
+        <dependency id="Rhetos.Jobs.Abstractions" version="6.0.0-dev" />
+        <dependency id="Hangfire.AspNetCore" version="1.8.9" />
+        <dependency id="HangFire.Autofac" version="2.5.0" />
+        <dependency id="Hangfire.Core" version="1.8.9" />
+        <dependency id="Hangfire.SqlServer" version="1.8.9" />
+      </group>
     </dependencies>
   </metadata>
   <files>
