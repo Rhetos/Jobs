@@ -36,7 +36,7 @@ namespace Rhetos.Jobs.Test
         /// Resolves IBackgroundJobs from DI and adds the new job by calling <see cref="BackgroundJobExtensions.EnqueueAction"/>.
         /// Returns Rhetos job IDs for provided actions.
         /// </summary>
-        public static List<Guid> EnqueueActionJobs(List<(object ActionParameter, bool ExecuteInUserContext, bool OptimizeDuplicates)> actions)
+        public static List<Guid> EnqueueActionJobs(List<(object ActionParameter, bool ExecuteInUserContext, bool OptimizeDuplicates, string Queue)> actions)
         {
             var rhetosJobIds = new List<Guid>();
             var log = new List<string>();
@@ -48,7 +48,7 @@ namespace Rhetos.Jobs.Test
 
                 foreach (var action in actions)
                 {
-                    jobs.EnqueueAction(action.ActionParameter, action.ExecuteInUserContext, action.OptimizeDuplicates);
+                    jobs.EnqueueAction(action.ActionParameter, action.ExecuteInUserContext, action.OptimizeDuplicates, action.Queue);
                     rhetosJobIds.Add(GetLastJobId(log));
                 }
 
@@ -71,19 +71,19 @@ namespace Rhetos.Jobs.Test
         private static readonly Regex _jobIdRegex = new Regex(@"JobId: (?<guid>[\w-]+)");
 
         /// <summary>
-        /// Returns dictionary: key is "Guid RhetosJobId", value is "long HangfireJobId".
+        /// Returns dictionary: key is "Guid RhetosJobId", value is (long HangfireJobId, string JobArguments).
         /// </summary>
-        public static Dictionary<Guid, long> ReadCreatedJobsFromDatabase(List<Guid> rhetosJobIds)
+        public static Dictionary<Guid, (long HangfireJobId, string JobArguments)> ReadCreatedJobsFromDatabase(List<Guid> rhetosJobIds)
         {
-            var hangfireJobIdByRhetosJobId = new Dictionary<Guid, long>();
+            var hangfireJobIdByRhetosJobId = new Dictionary<Guid, (long HangfireJobId, string JobArguments)>();
             using (var scope = RhetosProcessHelper.CreateScope())
             {
                 var sqlExecuter = scope.Resolve<ISqlExecuter>();
                 foreach (Guid rhetosJobId in rhetosJobIds)
                 {
                     sqlExecuter.ExecuteReader(
-                        $@"SELECT Id FROM HangFire.Job WITH (NOLOCK) WHERE Arguments LIKE '[[]""{{\""Id\"":\""{rhetosJobId}%'",
-                        reader => hangfireJobIdByRhetosJobId.Add(rhetosJobId, reader.GetInt64(0)));
+                        $@"SELECT Id, Arguments FROM HangFire.Job WITH (NOLOCK) WHERE Arguments LIKE '[[]""{{\""Id\"":\""{rhetosJobId}%'",
+                        reader => hangfireJobIdByRhetosJobId.Add(rhetosJobId, (reader.GetInt64(0), reader.GetString(1))));
                 }
             }
             return hangfireJobIdByRhetosJobId;

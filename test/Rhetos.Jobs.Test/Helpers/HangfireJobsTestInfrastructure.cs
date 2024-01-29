@@ -42,10 +42,21 @@ namespace Rhetos.Jobs.Test
         {
             var containerField = typeof(ProcessContainer).GetField("_rhetosIocContainer", BindingFlags.NonPublic | BindingFlags.Instance);
             var container = (Lazy<IContainer>)containerField.GetValue(RhetosProcessHelper.ProcessContainer);
+            
+            Autofac.Integration.Wcf.AutofacServiceHostFactory.Container = container.Value;
 
             RhetosJobServer.ConfigureHangfireJobServers(container.Value);
-            BackgroundJobServer = new BackgroundJobServer(new BackgroundJobServerOptions { ServerName =  Environment.MachineName + " unit tests" });
+            BackgroundJobServer = new BackgroundJobServer(new BackgroundJobServerOptions
+            {
+                ServerName =  Environment.MachineName + " unit tests",
+                Queues = new[] { "default", TestQueue1Name },
+                SchedulePollingInterval = TimeSpan.FromSeconds(1),
+            });
+
+            GlobalJobFilters.Filters.Add(new AutomaticRetryAttribute { Attempts = 1, DelaysInSeconds = new[] { 2 } });
         }
+
+        internal const string TestQueue1Name = "test-queue-1";
 
         public static BackgroundJobServer BackgroundJobServer;
 

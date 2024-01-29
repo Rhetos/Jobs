@@ -1,5 +1,9 @@
 # Rhetos.Jobs Release notes
 
+## 1.3.0 (TO BE RELEASED)
+
+* Bugfix: After a job fails, it will be executed again (retry) in the `default` queue, instead of the initially specified queueu.
+
 ## 1.2.0 (2023-06-01)
 
 * Added `Rhetos:Jobs:Hangfire:AutomaticRetryAttempts` option to control how many times Hangfire will try to execute method if error occurs (default value is 10). Also, you can control the time between each unsuccessfull execution with `Rhetos:Jobs:Hangfire:DelaysInSeconds` option (if empty, Hangfire default exponential delay time will apply). 
