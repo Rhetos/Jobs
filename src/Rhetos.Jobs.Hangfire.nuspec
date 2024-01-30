@@ -23,6 +23,7 @@
   <files>
     <file src="..\Readme.md" target="" />
     <file src="Rhetos.Jobs.Hangfire\DslScripts\**\*" target="DslScripts" />
+    <file src="Rhetos.Jobs.Hangfire\DataMigration\**\*" target="DataMigration" />
     <file src="Rhetos.Jobs.Hangfire\bin\Debug\Rhetos.Jobs.Hangfire.dll" target="lib\net472" />
     <file src="Rhetos.Jobs.Hangfire\bin\Debug\Rhetos.Jobs.Hangfire.pdb" target="lib\net472" />
     <file src="Rhetos.Jobs.Hangfire\bin\Debug\Rhetos.Jobs.Hangfire.xml" target="lib\net472" />

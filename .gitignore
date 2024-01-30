@@ -247,4 +247,5 @@ _Pvt_Extensions
 /Rhetos/Resources
 /src/Rhetos.ElasticSearch/*.DotSettings
 /test/TestApp/DslScripts/Rhetos.Jobs.Hangfire/
+/test/TestApp/DataMigration/Rhetos.Jobs.Hangfire/
 /test/TestApp/ConnectionStrings.config

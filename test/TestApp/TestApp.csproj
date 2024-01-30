@@ -80,7 +80,8 @@
     <Folder Include="App_Data\" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="DslScripts\Rhetos.Jobs.Hangfire\*.rhe" />
+    <Content Include="DslScripts\Rhetos.Jobs.Hangfire\**\*.rhe" />
+    <Content Include="DataMigration\Rhetos.Jobs.Hangfire\**\*.sql" />
     <Content Include="rhetos-app.settings.json" />
     <Content Include="rhetos-build.settings.json" />
     <Content Include="DslScripts\AsyncAction.rhe" />
@@ -149,6 +150,7 @@
   </ProjectExtensions>
   <PropertyGroup>
     <PreBuildEvent>robocopy "$(ProjectDir)..\..\src\Rhetos.Jobs.Hangfire\DslScripts" "$(ProjectDir)DslScripts\Rhetos.Jobs.Hangfire" /MIR /NP /NJH /NJS /NDL || call rem
+robocopy "$(ProjectDir)..\..\src\Rhetos.Jobs.Hangfire\DataMigration" "$(ProjectDir)DataMigration\Rhetos.Jobs.Hangfire" /MIR /NP /NJH /NJS /NDL || call rem
 @rem "call rem" clears robocopy exit codes to avoid issues with msbuild.
 </PreBuildEvent>
   </PropertyGroup>
