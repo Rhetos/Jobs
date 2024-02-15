@@ -17,7 +17,6 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Hangfire.Common;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
 using Rhetos.TestCommon;
@@ -65,10 +64,10 @@ namespace Rhetos.Jobs.Test
         [TestMethod]
 		public void ExecuteInUserContext()
         {
-            var actions = new List<(object ActionParameter, bool ExecuteInUserContext, bool OptimizeDuplicates, bool AnonymousUser)>
+            var actions = new List<(object ActionParameter, bool ExecuteInUserContext, bool OptimizeDuplicates, bool AnonymousUser, string Queue)>
             {
-                (new TestRhetosJobs.SimpleAction { Data = "ExecuteAsSystem " + Guid.NewGuid().ToString() }, false, false, false),
-                (new TestRhetosJobs.SimpleAction { Data = "ExecuteAsUser " + Guid.NewGuid().ToString() }, true, false, false),
+                (new TestRhetosJobs.SimpleAction { Data = "ExecuteAsSystem " + Guid.NewGuid().ToString() }, false, false, false, null),
+                (new TestRhetosJobs.SimpleAction { Data = "ExecuteAsUser " + Guid.NewGuid().ToString() }, true, false, false, null),
             };
 
             List<(string ContextInfo, string ActionData)> dbLog = ExecuteJobsReturnDbLog(actions);
@@ -94,10 +93,10 @@ namespace Rhetos.Jobs.Test
         [TestMethod]
         public void ExecuteInUserContextAnonymous()
         {
-            var actions = new List<(object ActionParameter, bool ExecuteInUserContext, bool OptimizeDuplicates, bool AnonymousUser)>
+            var actions = new List<(object ActionParameter, bool ExecuteInUserContext, bool OptimizeDuplicates, bool AnonymousUser, string Queue)>
             {
-                (new TestRhetosJobs.SimpleAction { Data = "ExecuteAsSystem " + Guid.NewGuid().ToString() }, false, false, true),
-                (new TestRhetosJobs.SimpleAction { Data = "ExecuteAsAnonymous " + Guid.NewGuid().ToString() }, true, false, true),
+                (new TestRhetosJobs.SimpleAction { Data = "ExecuteAsSystem " + Guid.NewGuid().ToString() }, false, false, true, null),
+                (new TestRhetosJobs.SimpleAction { Data = "ExecuteAsAnonymous " + Guid.NewGuid().ToString() }, true, false, true, null),
             };
 
             List<(string ContextInfo, string ActionData)> dbLog = ExecuteJobsReturnDbLog(actions);
@@ -118,7 +117,7 @@ namespace Rhetos.Jobs.Test
                 TestUtility.DumpSorted(actualJobsWithUserContext));
         }
 
-        private static List<(string ContextInfo, string ActionData)> ExecuteJobsReturnDbLog(List<(object ActionParameter, bool ExecuteInUserContext, bool OptimizeDuplicates, bool AnonymousUser)> actions)
+        private static List<(string ContextInfo, string ActionData)> ExecuteJobsReturnDbLog(List<(object ActionParameter, bool ExecuteInUserContext, bool OptimizeDuplicates, bool AnonymousUser, string Queue)> actions)
         {
             var rhetosJobIds = RhetosHangfireHelper.EnqueueActionJobs(actions);
             var hangfireJobs = RhetosHangfireHelper.ReadCreatedJobsFromDatabase(rhetosJobIds);
@@ -164,16 +163,16 @@ namespace Rhetos.Jobs.Test
 		public void UseCorrectQueueOnRetry()
 		{
 			DateTime testStart;
-			using (var scope = RhetosProcessHelper.CreateScope())
+			using (var scope = TestScope.Create())
 				testStart = SqlUtility.GetDatabaseTime(scope.Resolve<ISqlExecuter>());
 
             var actionTestQueue = new TestRhetosJobs.RetryingAction { Data = "testQueueJob " + Guid.NewGuid().ToString() };
             var actionDefaultQueue = new TestRhetosJobs.RetryingAction { Data = "defaultQueueJob " + Guid.NewGuid().ToString() };
 
-            var actions = new List<(object ActionParameter, bool ExecuteInUserContext, bool OptimizeDuplicates, string QueueName)>
+            var actions = new List<(object ActionParameter, bool ExecuteInUserContext, bool OptimizeDuplicates, bool AnonymousUser, string Queue)>
             {
-				(actionTestQueue, false, false, HangfireJobsTestInfrastructure.TestQueue1Name),
-				(actionDefaultQueue, false, false, null),
+				(actionTestQueue, false, false, false, BackgroundJobServer.TestQueue1Name),
+				(actionDefaultQueue, false, false, false, null),
 			};
 
 			var rhetosJobIds = RhetosHangfireHelper.EnqueueActionJobs(actions);
@@ -187,7 +186,7 @@ namespace Rhetos.Jobs.Test
 			string sql = $"SELECT Id, JobId, Data FROM HangFire.State WHERE JobId IN ({string.Join(", ", hangfireJobIds)}) AND Name = 'Enqueued'";
 
 			var events = new List<(long Id, long JobId, string Data)>();
-			using (var scope = RhetosProcessHelper.CreateScope())
+			using (var scope = TestScope.Create())
 			{
 				var sqlExecuter = scope.Resolve<ISqlExecuter>();
 				sqlExecuter.ExecuteReader(sql, reader => events.Add((reader.GetInt64(0), reader.GetInt64(1), reader.GetString(2))));

@@ -33,14 +33,7 @@ namespace Rhetos.Jobs.Test
         [AssemblyInitialize]
         public static void HangfireJobsServiceInitialize(TestContext _)
         {
-            RhetosJobsHangfireStartupExtensions.UseRhetosHangfireServer(TestScope.RhetosHost
-                , ... new BackgroundJobServerOptions
-                    {
-                        ServerName =  Environment.MachineName + " unit tests",
-                        Queues = new[] { "default", BackgroundJobServer.TestQueue1Name },
-                        SchedulePollingInterval = TimeSpan.FromSeconds(1),
-                    }
-                );
+            RhetosJobsHangfireStartupExtensions.UseRhetosHangfireServer(TestScope.RhetosHost);
         }
 
         internal const string TestQueue1Name = "test-queue-1";
