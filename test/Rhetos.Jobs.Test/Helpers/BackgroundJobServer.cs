@@ -33,8 +33,17 @@ namespace Rhetos.Jobs.Test
         [AssemblyInitialize]
         public static void HangfireJobsServiceInitialize(TestContext _)
         {
-            RhetosJobsHangfireStartupExtensions.UseRhetosHangfireServer(TestScope.RhetosHost);
+            RhetosJobsHangfireStartupExtensions.UseRhetosHangfireServer(TestScope.RhetosHost
+                , ... new BackgroundJobServerOptions
+                    {
+                        ServerName =  Environment.MachineName + " unit tests",
+                        Queues = new[] { "default", BackgroundJobServer.TestQueue1Name },
+                        SchedulePollingInterval = TimeSpan.FromSeconds(1),
+                    }
+                );
         }
+
+        internal const string TestQueue1Name = "test-queue-1";
 
         /// <summary>
         /// After unit tests are completed, any background jobs that are still running will be terminated, and ThreadAbortException might occur.

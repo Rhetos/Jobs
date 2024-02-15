@@ -41,7 +41,7 @@ namespace Rhetos.Jobs.Test
         /// Returns Rhetos job IDs for provided actions.
         /// </summary>
 #pragma warning disable CA1002 // Do not expose generic lists
-        public static List<Guid> EnqueueActionJobs(ICollection<(object ActionParameter, bool ExecuteInUserContext, bool OptimizeDuplicates, bool AnonymousUser)> actions)
+        public static List<Guid> EnqueueActionJobs(ICollection<(object ActionParameter, bool ExecuteInUserContext, bool OptimizeDuplicates, bool AnonymousUser, string Queue)> actions)
 #pragma warning restore CA1002 // Do not expose generic lists
         {
             var rhetosJobIds = new List<Guid>();
@@ -56,7 +56,7 @@ namespace Rhetos.Jobs.Test
 
                     foreach (var action in actions.Where(a => a.AnonymousUser == anonymous))
                     {
-                        jobs.EnqueueAction(action.ActionParameter, action.ExecuteInUserContext, action.OptimizeDuplicates);
+                        jobs.EnqueueAction(action.ActionParameter, action.ExecuteInUserContext, action.OptimizeDuplicates, action.Queue);
                         rhetosJobIds.Add(GetLastJobId(log));
                     }
 
@@ -79,19 +79,19 @@ namespace Rhetos.Jobs.Test
         private static readonly Regex _jobIdRegex = new Regex(@"JobId: (?<guid>[\w-]+)");
 
         /// <summary>
-        /// Returns dictionary: key is "Guid RhetosJobId", value is "long HangfireJobId".
+        /// Returns dictionary: key is "Guid RhetosJobId", value is (long HangfireJobId, string JobArguments).
         /// </summary>
-        public static Dictionary<Guid, long> ReadCreatedJobsFromDatabase(IReadOnlyCollection<Guid> rhetosJobIds)
+        public static Dictionary<Guid, (long HangfireJobId, string JobArguments)> ReadCreatedJobsFromDatabase(IReadOnlyCollection<Guid> rhetosJobIds)
         {
-            var hangfireJobIdByRhetosJobId = new Dictionary<Guid, long>();
+            var hangfireJobIdByRhetosJobId = new Dictionary<Guid, (long HangfireJobId, string JobArguments)>();
             using (var scope = TestScope.Create())
             {
                 var sqlExecuter = scope.Resolve<ISqlExecuter>();
                 foreach (Guid rhetosJobId in rhetosJobIds)
                 {
                     sqlExecuter.ExecuteReader(
-                        $@"SELECT Id FROM HangFire.Job WITH (NOLOCK) WHERE Arguments LIKE '[[]""{{\""Id\"":\""{rhetosJobId}%'",
-                        reader => hangfireJobIdByRhetosJobId.Add(rhetosJobId, reader.GetInt64(0)));
+                        $@"SELECT Id, Arguments FROM HangFire.Job WITH (NOLOCK) WHERE Arguments LIKE '[[]""{{\""Id\"":\""{rhetosJobId}%'",
+                        reader => hangfireJobIdByRhetosJobId.Add(rhetosJobId, (reader.GetInt64(0), reader.GetString(1))));
                 }
             }
             return hangfireJobIdByRhetosJobId;

@@ -77,10 +77,17 @@ namespace Rhetos.Jobs.Hangfire
 			_logger.Trace(() => $"Job enqueued in Hangfire.|{job.GetLogInfo()}");
 		}
 
+        /// <summary>
+        /// Hangfire's convention is to use lowercase for queue names.
+		/// If queue name is not specified, the default queue is used.
+        /// </summary>
+        private static string NormalizeQueueName(string queue) => queue?.ToLowerInvariant() ?? HangfireDefaultQueueName;
+
         public void AddJob<TExecuter, TParameter>(TParameter parameter, bool executeInUserContext, object aggregationGroup = null, JobAggregator<TParameter> jobAggregator = null, string queue = null)
 			where TExecuter : IJobExecuter<TParameter>
         {
 			_hangfireInitialization.InitializeGlobalConfiguration();
+			queue = NormalizeQueueName(queue);
 
 			var newJob = new JobParameter<TParameter>
 			{
@@ -129,27 +136,9 @@ namespace Rhetos.Jobs.Hangfire
 				}
 			}
 
-#pragma warning disable CA1308 // Normalize strings to uppercase. Hangfire's convention is to use lowercase for queue names.
-			if (string.IsNullOrWhiteSpace(queue) || queue.ToLowerInvariant() == HangfireDefaultQueueName)
-#pragma warning restore CA1308 // Normalize strings to uppercase
-            {
 				// Not enqueuing immediately to Hangfire, to allow later duplicate jobs to suppress the current one.
-				schedule.EnqueueJob = () => global::Hangfire.BackgroundJob.Enqueue<RhetosExecutionContext<TExecuter, TParameter>>(
-					context => context.ExecuteUnitOfWork(newJob));
-			}
-			else
-			{
-				// Not enqueuing immediately to Hangfire, to allow later duplicate jobs to suppress the current one.
-				// Only way to use specific queue is to use new instance of BackgroundJobClient and set specific EnqueuedState.
-				schedule.EnqueueJob = () =>
-				{
-					var client = new BackgroundJobClient();
-#pragma warning disable CA1308 // Normalize strings to uppercase. Hangfire's convention is to use lowercase for queue names.
-					var state = new EnqueuedState(queue.ToLowerInvariant());
-#pragma warning restore CA1308 // Normalize strings to uppercase
-                    client.Create<RhetosExecutionContext<TExecuter, TParameter>>(context => context.ExecuteUnitOfWork(newJob), state);
-				};
-			}
+			schedule.EnqueueJob = () => BackgroundJob.Enqueue<RhetosExecutionContext<TExecuter, TParameter>>(
+				context => context.ExecuteUnitOfWork(newJob, queue));
 
 			_jobInstances.Add(schedule);
 			_logger.Trace(() => $"Job created.|{schedule.GetLogInfo()}");
@@ -164,6 +153,7 @@ namespace Rhetos.Jobs.Hangfire
 			where TExecuter : IJobExecuter<TParameter>
 		{
 			_hangfireInitialization.InitializeGlobalConfiguration();
+			queue = NormalizeQueueName(queue);
 
 			// The name is required for recurring jobs in order to:
 			// 1. recognize a duplicate job initialization (for example on app startup),
@@ -187,7 +177,7 @@ namespace Rhetos.Jobs.Hangfire
 				ParameterType = typeof(TParameter),
 				AggregationGroup = null,
 				EnqueueJob = () => RecurringJob.AddOrUpdate<RhetosExecutionContext<TExecuter, TParameter>>(
-					name, context => context.ExecuteUnitOfWork(newJob), cronExpression, TimeZoneInfo.Local, queue ?? HangfireDefaultQueueName)
+					name, context => context.ExecuteUnitOfWork(newJob, queue), cronExpression, TimeZoneInfo.Local, queue)
 			};
 
 			_jobInstances.Add(schedule);

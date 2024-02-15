@@ -49,7 +49,10 @@ namespace Rhetos.Jobs.Hangfire
 		/// <summary>
 		/// Executes the job in a new unit of work (in a separate transaction and a separate Rhetos DI scope).
 		/// </summary>
-		public void ExecuteUnitOfWork(JobParameter<TParameter> job)
+		[Queue("{1}")]
+#pragma warning disable IDE0060 // (Remove unused parameter) The "queue" parameter is used internally by Hangfire, not by the code in this method.
+		public void ExecuteUnitOfWork(JobParameter<TParameter> job, string queue)
+#pragma warning restore IDE0060
 		{
 			_logger.Trace(() => $"ExecuteJob started.|{job.GetLogInfo(typeof(TExecuter))}");
 			
