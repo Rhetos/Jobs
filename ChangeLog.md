@@ -1,6 +1,6 @@
 # Rhetos.Jobs Release notes
 
-## 1.3.0 (TO BE RELEASED)
+## 1.3.0 (2024-02-15)
 
 * Bugfix: After a job fails, it will be executed again (retry) in the `default` queue, instead of the initially specified queueu.
 
