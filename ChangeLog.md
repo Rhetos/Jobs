@@ -3,13 +3,13 @@
 ## 5.4.0 (TO BE RELEASED)
 
 * Changes from release 1.3.0:
-  * Bugfix: After a job fails, it will be executed again (retry) in the `default` queue, instead of the initially specified queueu.
+  * Bugfix: After a job fails, it will be executed again (retry) in the `default` queue, instead of the initially specified queue.
 
 ## 5.3.0 (2023-06-01)
 
 * Added a recurring job option "RunAs". If specified, the job will run in a context of the specified Rhetos app user. See [Readme.md](Readme.md).
 * Changes from release 1.2.0:
-  * Added `Rhetos:Jobs:Hangfire:AutomaticRetryAttempts` option to control how many times Hangfire will try to execute method if error occurs (default value is 10). Also, you can control the time between each unsuccessfull execution with `Rhetos:Jobs:Hangfire:DelaysInSeconds` option (if empty, Hangfire default exponential delay time will apply). 
+  * Added `Rhetos:Jobs:Hangfire:AutomaticRetryAttempts` option to control how many times Hangfire will try to execute method if error occurs (default value is 10). Also, you can control the time between each unsuccessful execution with `Rhetos:Jobs:Hangfire:DelaysInSeconds` option (if empty, Hangfire default exponential delay time will apply). 
 
 ## 5.2.0 (2022-07-06)
 
@@ -34,13 +34,13 @@
 
 *(Changes from v1.3.0 are not included in releases v5.0.0 - v5.3.0)*
 
-* Bugfix: After a job fails, it will be executed again (retry) in the `default` queue, instead of the initially specified queueu.
+* Bugfix: After a job fails, it will be executed again (retry) in the `default` queue, instead of the initially specified queue.
 
 ## 1.2.0 (2023-06-01)
 
 *(Changes from v1.2.0 are not included in releases v5.0.0 - v5.2.0)*
 
-* Added `Rhetos:Jobs:Hangfire:AutomaticRetryAttempts` option to control how many times Hangfire will try to execute method if error occurs (default value is 10). Also, you can control the time between each unsuccessfull execution with `Rhetos:Jobs:Hangfire:DelaysInSeconds` option (if empty, Hangfire default exponential delay time will apply). 
+* Added `Rhetos:Jobs:Hangfire:AutomaticRetryAttempts` option to control how many times Hangfire will try to execute method if error occurs (default value is 10). Also, you can control the time between each unsuccessful execution with `Rhetos:Jobs:Hangfire:DelaysInSeconds` option (if empty, Hangfire default exponential delay time will apply). 
 
 ## 1.1.0 (2022-02-14)
 
