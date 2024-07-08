@@ -43,7 +43,10 @@ namespace Rhetos.Dom.DefaultConcepts
         /// <param name="queue">
         /// Name of the queue. Default is null.
         /// </param>
-        public static void EnqueueAction(this IBackgroundJobs backgroundJob, object action, bool executeInUserContext, bool optimizeDuplicates, string queue = null)
+        /// <param name="retryAttempts">
+        /// Overrides the default automatic retry attempts number.
+        /// </param>
+        public static void EnqueueAction(this IBackgroundJobs backgroundJob, object action, bool executeInUserContext, bool optimizeDuplicates, string queue = null, int? retryAttempts = null)
         {
             var jobParameters = ActionJobParameter.FromActionInstance(action);
 
@@ -52,7 +55,8 @@ namespace Rhetos.Dom.DefaultConcepts
                 executeInUserContext,
                 optimizeDuplicates ? JsonConvert.SerializeObject(jobParameters) : null,
                 null,
-                queue);
+                queue,
+                retryAttempts);
         }
 
         /// <summary>

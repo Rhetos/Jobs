@@ -77,7 +77,7 @@ namespace Rhetos.Jobs.Hangfire
 			_logger.Trace(() => $"Job enqueued in Hangfire.|{job.GetLogInfo()}");
 		}
 
-        public void AddJob<TExecuter, TParameter>(TParameter parameter, bool executeInUserContext, object aggregationGroup = null, JobAggregator<TParameter> jobAggregator = null, string queue = null)
+        public void AddJob<TExecuter, TParameter>(TParameter parameter, bool executeInUserContext, object aggregationGroup = null, JobAggregator<TParameter> jobAggregator = null, string queue = null, int? retryAttempts = null)
 			where TExecuter : IJobExecuter<TParameter>
         {
 			_hangfireInitialization.InitializeGlobalConfiguration();
@@ -129,9 +129,9 @@ namespace Rhetos.Jobs.Hangfire
 				}
 			}
 
-#pragma warning disable CA1308 // Normalize strings to uppercase. Hangfire's convention is to use lowercase for queue names.
-			if (string.IsNullOrWhiteSpace(queue) || queue.ToLowerInvariant() == HangfireDefaultQueueName)
-#pragma warning restore CA1308 // Normalize strings to uppercase
+			queue ??= HangfireDefaultQueueName;
+
+            if (retryAttempts == null && queue.Equals(HangfireDefaultQueueName, StringComparison.OrdinalIgnoreCase))
             {
 				// Not enqueuing immediately to Hangfire, to allow later duplicate jobs to suppress the current one.
 				schedule.EnqueueJob = () => global::Hangfire.BackgroundJob.Enqueue<RhetosExecutionContext<TExecuter, TParameter>>(
@@ -144,6 +144,9 @@ namespace Rhetos.Jobs.Hangfire
 				schedule.EnqueueJob = () =>
 				{
 					var client = new BackgroundJobClient();
+					if (retryAttempts != null)
+						client.RetryAttempts = retryAttempts.Value;
+
 #pragma warning disable CA1308 // Normalize strings to uppercase. Hangfire's convention is to use lowercase for queue names.
 					var state = new EnqueuedState(queue.ToLowerInvariant());
 #pragma warning restore CA1308 // Normalize strings to uppercase

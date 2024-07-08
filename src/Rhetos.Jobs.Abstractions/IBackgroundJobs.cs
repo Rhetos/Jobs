@@ -27,42 +27,45 @@ namespace Rhetos.Jobs
     /// </summary>
     public interface IBackgroundJobs
 	{
-		/// <summary>
-		/// Creates a new background job that will be executed after the current transaction is completed.
-		/// </summary>
-		/// <typeparam name="TExecuter">
-		/// Class that will execute the job. Must implement <see cref="IJobExecuter{TParameter}"/>.
-		/// </typeparam>
-		/// <typeparam name="TParameter">
-		/// Job parameter that will be provided to job executer.
-		/// </typeparam>
-		/// <param name="parameter">
-		/// Job parameters.
-		/// </param>
-		/// <param name="executeInUserContext">
-		/// If true, the job will be executed in context of the user which started the transaction in which Action was enqueued.
-		/// Otherwise it will be executed in context of service account.
-		/// Note that the action execution will not automatically check for the user's claims.
-		/// </param>
-		/// <param name="aggregationGroup">
-		/// Optional.
-		/// Allows removing previous duplicate jobs within the current scope (web request).
-		/// If set to null, aggregation is turned off and duplicate jobs will not be removed.
-		/// The jobs of the same type, with the same aggregation group, will be sent to <paramref name="jobAggregator"/>.
-		/// A default implementation of the aggregator is to simply removed the old job within the same aggregation group.
-		/// The value can be any type (e.g. a string or anonymous type). If a custom class is used, it should override <see cref="object.Equals(object)"/> and <see cref="object.GetHashCode"/>.
-		/// </param>
-		/// <param name="jobAggregator">
-		/// Optional.
-		/// Allows removing previous duplicate jobs within the current scope (web request) and combining work of multiple jobs into one.
-		/// If set to null, a default implementation will be applied, that simply removes the old job within the same <paramref name="aggregationGroup"/>.
-		/// It will be called for each new job, with provided last instance of the same job type, user context and the same aggregation group, if such last instance exists.
-		/// See <see cref="JobAggregator{TParameter}"/> for more details.
-		/// </param>
-		/// <param name="queue">
-		/// Name of the queue. Default is null.
-		/// </param>
-		void AddJob<TExecuter, TParameter>(TParameter parameter, bool executeInUserContext, object aggregationGroup = null, JobAggregator<TParameter> jobAggregator = null, string queue = null)
+        /// <summary>
+        /// Creates a new background job that will be executed after the current transaction is completed.
+        /// </summary>
+        /// <typeparam name="TExecuter">
+        /// Class that will execute the job. Must implement <see cref="IJobExecuter{TParameter}"/>.
+        /// </typeparam>
+        /// <typeparam name="TParameter">
+        /// Job parameter that will be provided to job executer.
+        /// </typeparam>
+        /// <param name="parameter">
+        /// Job parameters.
+        /// </param>
+        /// <param name="executeInUserContext">
+        /// If true, the job will be executed in context of the user which started the transaction in which Action was enqueued.
+        /// Otherwise it will be executed in context of service account.
+        /// Note that the action execution will not automatically check for the user's claims.
+        /// </param>
+        /// <param name="aggregationGroup">
+        /// Optional.
+        /// Allows removing previous duplicate jobs within the current scope (web request).
+        /// If set to null, aggregation is turned off and duplicate jobs will not be removed.
+        /// The jobs of the same type, with the same aggregation group, will be sent to <paramref name="jobAggregator"/>.
+        /// A default implementation of the aggregator is to simply removed the old job within the same aggregation group.
+        /// The value can be any type (e.g. a string or anonymous type). If a custom class is used, it should override <see cref="object.Equals(object)"/> and <see cref="object.GetHashCode"/>.
+        /// </param>
+        /// <param name="jobAggregator">
+        /// Optional.
+        /// Allows removing previous duplicate jobs within the current scope (web request) and combining work of multiple jobs into one.
+        /// If set to null, a default implementation will be applied, that simply removes the old job within the same <paramref name="aggregationGroup"/>.
+        /// It will be called for each new job, with provided last instance of the same job type, user context and the same aggregation group, if such last instance exists.
+        /// See <see cref="JobAggregator{TParameter}"/> for more details.
+        /// </param>
+        /// <param name="queue">
+        /// Name of the queue. Default is null.
+        /// </param>
+        /// <param name="retryAttempts">
+        /// Overrides the default automatic retry attempts number.
+        /// </param>
+        void AddJob<TExecuter, TParameter>(TParameter parameter, bool executeInUserContext, object aggregationGroup = null, JobAggregator<TParameter> jobAggregator = null, string queue = null, int? retryAttempts = null)
 			where TExecuter : IJobExecuter<TParameter>;
 
         /// <summary>
