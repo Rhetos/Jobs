@@ -79,11 +79,13 @@ namespace Rhetos.Jobs.Hangfire
 
         /// <summary>
         /// Hangfire's convention is to use lowercase for queue names.
-		/// If queue name is not specified, the default queue is used.
+        /// If queue name is not specified, the default queue is used.
         /// </summary>
+#pragma warning disable CA1308 // Normalize strings to uppercase. Hangfire's convention is to use lowercase for queue names.
         private static string NormalizeQueueName(string queue) => queue?.ToLowerInvariant() ?? HangfireDefaultQueueName;
+#pragma warning restore CA1308 // Normalize strings to uppercase.
 
-        public void AddJob<TExecuter, TParameter>(TParameter parameter, bool executeInUserContext, object aggregationGroup = null, JobAggregator<TParameter> jobAggregator = null, string queue = null)
+        public void AddJob<TExecuter, TParameter>(TParameter parameter, bool executeInUserContext, object aggregationGroup = null, JobAggregator<TParameter> jobAggregator = null, string queue = null, int? retryAttempts = null)
 			where TExecuter : IJobExecuter<TParameter>
         {
 			_hangfireInitialization.InitializeGlobalConfiguration();
@@ -136,9 +138,22 @@ namespace Rhetos.Jobs.Hangfire
 				}
 			}
 
-				// Not enqueuing immediately to Hangfire, to allow later duplicate jobs to suppress the current one.
-			schedule.EnqueueJob = () => BackgroundJob.Enqueue<RhetosExecutionContext<TExecuter, TParameter>>(
+            //Simple Enqueue method does not support custom number of retry attempts.
+            schedule.EnqueueJob = () => BackgroundJob.Enqueue<RhetosExecutionContext<TExecuter, TParameter>>(
 				context => context.ExecuteUnitOfWork(newJob, queue));
+
+            // Not enqueuing immediately to Hangfire, to allow later duplicate jobs to suppress the current one.
+            schedule.EnqueueJob = () =>
+			{
+				// TODO: Hangfire's BackgroundJob class uses static CachedClient for better performance (possibly memory). I should probably create a single one for each distinct RetryAttempts.
+				// TODO: Check if this client uses same options (see appsettings) as the standard client from BackgroundJob.
+				var client = new BackgroundJobClient();
+                if (retryAttempts != null)
+					client.RetryAttempts = retryAttempts.Value;
+
+				var state = new EnqueuedState(queue);
+                client.Create<RhetosExecutionContext<TExecuter, TParameter>>(queue, context => context.ExecuteUnitOfWork(newJob, queue), state);
+			};
 
 			_jobInstances.Add(schedule);
 			_logger.Trace(() => $"Job created.|{schedule.GetLogInfo()}");
