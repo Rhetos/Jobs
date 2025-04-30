@@ -1,5 +1,7 @@
 # Rhetos.Jobs Release notes
 
+## 6.0.0 (TO-BE-RELEASED)
+
 ## 5.4.0 (2025-04-30)
 
 * Changes from release 1.3.0:

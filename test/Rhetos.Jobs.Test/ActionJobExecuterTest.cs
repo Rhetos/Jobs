@@ -164,7 +164,7 @@ namespace Rhetos.Jobs.Test
 		{
 			DateTime testStart;
 			using (var scope = TestScope.Create())
-				testStart = SqlUtility.GetDatabaseTime(scope.Resolve<ISqlExecuter>());
+				testStart = scope.Resolve<ISqlUtility>().GetDatabaseTime(scope.Resolve<ISqlExecuter>());
 
             var actionTestQueue = new TestRhetosJobs.RetryingAction { Data = "testQueueJob " + Guid.NewGuid().ToString() };
             var actionDefaultQueue = new TestRhetosJobs.RetryingAction { Data = "defaultQueueJob " + Guid.NewGuid().ToString() };
