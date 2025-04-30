@@ -19,6 +19,7 @@
 
 using Autofac;
 using Common;
+using Rhetos.Jobs.Hangfire;
 using Rhetos.Logging;
 using Rhetos.Security;
 using Rhetos.Utilities;
@@ -46,7 +47,15 @@ namespace Rhetos.Jobs.Test
         /// Each test should create a child scope with <see cref="TestScope.Create"/> method to start a 'using' block.
         /// </summary>
         public static readonly RhetosHost RhetosHost = RhetosHost.CreateFrom(@"..\..\..\..\TestApp\bin\Debug\net8.0\TestApp.dll",
-            hostBuilder => hostBuilder.ConfigureContainer(containerBuilder => containerBuilder.RegisterType<ProcessUserInfo>().As<IUserInfo>()));
+            hostBuilder => hostBuilder.ConfigureContainer(containerBuilder =>
+            {
+                containerBuilder.RegisterType<ProcessUserInfo>().As<IUserInfo>();
+                containerBuilder.RegisterInstance(new RhetosJobHangfireOptions {
+                    SchedulePollingInterval = 1,
+                    DelaysInSeconds = "1",
+                    Queues = new[] { "default", BackgroundJobServer.TestQueue1Name },
+                });
+            }));
 
         /// <summary>
         /// Runs the test code in a new unit-of-work scope (see <see cref="Create"/>).

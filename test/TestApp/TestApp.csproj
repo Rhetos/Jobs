@@ -26,4 +26,11 @@
     <Copy SourceFiles="@(RhetosJobsHangfireDslScripts)" DestinationFolder="DslScripts\Rhetos.Jobs.Hangfire" SkipUnchangedFiles="true" />
   </Target>
 
+  <Target Name="CopyDataMigration" BeforeTargets="ResolveRhetosBuildItems">
+    <ItemGroup>
+      <RhetosJobsHangfireDataMigration Include="..\..\src\Rhetos.Jobs.Hangfire\DataMigration\**\*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(RhetosJobsHangfireDataMigration)" DestinationFolder="DataMigration\Rhetos.Jobs.Hangfire" SkipUnchangedFiles="true" />
+  </Target>
+
 </Project>

@@ -8,6 +8,7 @@
     <license type="expression">AGPL-3.0-only</license>
     <projectUrl>https://github.com/rhetos/rhetos</projectUrl>
     <description>This package is a plugin for Rhetos development platform.</description>
+    <readme>docs\Readme.md</readme>
     <copyright>Copyright Omega software 2019</copyright>
     <tags>Rhetos plugin</tags>
     <dependencies>
@@ -23,9 +24,9 @@
     </dependencies>
   </metadata>
   <files>
-    <file src="..\Readme.md" target="" />
-    <file src="..\ChangeLog.md" target="" />
+    <file src="..\Readme.md" target="docs" />
     <file src="Rhetos.Jobs.Hangfire\DslScripts\**\*" target="DslScripts" />
+    <file src="Rhetos.Jobs.Hangfire\DataMigration\**\*" target="DataMigration" />
     <file src="Rhetos.Jobs.Hangfire\bin\Debug\net8.0\Rhetos.Jobs.Hangfire.dll" target="lib\net8.0" />
     <file src="Rhetos.Jobs.Hangfire\bin\Debug\net8.0\Rhetos.Jobs.Hangfire.pdb" target="lib\net8.0" />
     <file src="Rhetos.Jobs.Hangfire\bin\Debug\net8.0\Rhetos.Jobs.Hangfire.xml" target="lib\net8.0" />

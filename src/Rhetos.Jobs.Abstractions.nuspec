@@ -8,6 +8,7 @@
     <license type="expression">AGPL-3.0-only</license>
     <projectUrl>https://github.com/rhetos/rhetos</projectUrl>
     <description>This package is a plugin for Rhetos development platform.</description>
+    <readme>docs\Readme.md</readme>
     <copyright>Copyright Omega software 2019</copyright>
     <tags>Rhetos plugin</tags>
     <releaseNotes>
@@ -20,8 +21,7 @@
     </dependencies>
   </metadata>
   <files>
-    <file src="..\Readme.md" target="" />
-    <file src="..\ChangeLog.md" target="" />
+    <file src="..\Readme.md" target="docs" />
     <file src="Rhetos.Jobs.Abstractions\bin\Debug\net8.0\Rhetos.Jobs.Abstractions.dll" target="lib\net8.0" />
     <file src="Rhetos.Jobs.Abstractions\bin\Debug\net8.0\Rhetos.Jobs.Abstractions.pdb" target="lib\net8.0" />
     <file src="Rhetos.Jobs.Abstractions\bin\Debug\net8.0\Rhetos.Jobs.Abstractions.xml" target="lib\net8.0" />

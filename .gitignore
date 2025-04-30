@@ -238,4 +238,5 @@ _Pvt_Extensions
 
 # Project-specific
 /test/TestApp/ConnectionString.local.json
-/test/TestApp/DslScripts/Rhetos.Jobs.Hangfire/**/*
+/test/TestApp/DslScripts/Rhetos.Jobs.Hangfire/
+/test/TestApp/DataMigration/Rhetos.Jobs.Hangfire/

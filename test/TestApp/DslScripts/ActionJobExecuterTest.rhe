@@ -11,4 +11,24 @@
 	{
 		ShortString Data;
 	}
+
+	Action RetryingAction '(parameter, repository, userInfo) =>
+		{
+			int previousEntriesCount = _domRepository.Common.LogReader.Query(l => l.TableName == null && l.Action == "TestRhetosJobs.RetryingAction" && l.Description == parameter.Data).Count();
+
+			// Insert the log entry in a separate scope, so that it remains in database even if job execution fails.
+			using (var scope = _unitOfWorkFactory.CreateScope())
+			{
+				var scopeRepository = scope.Resolve<Common.DomRepository>();
+				scopeRepository.Common.AddToLog.Execute(new Common.AddToLog { Action = "TestRhetosJobs.RetryingAction", Description = parameter.Data });
+				scope.CommitAndClose();
+			}
+
+			if (previousEntriesCount == 0)
+				throw new Rhetos.UserException($"First execution fails. Data={parameter.Data}");
+		}'
+	{
+		ShortString Data;
+		RepositoryUses _unitOfWorkFactory 'Rhetos.IUnitOfWorkFactory';
+	}
 }
