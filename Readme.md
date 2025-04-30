@@ -167,7 +167,7 @@ Configuration of the plugin is done in `appsettings.json`, like in the following
         "ServerTimeout": 300, //Value is in seconds. Default value is 300. For usage of the option see Hangfire documentation.
         "ServerCheckInterval": 300, //Value is in seconds. Default value is 300. For usage of the option see Hangfire documentation.
         "CancellationCheckInterval": 5, //Value is in seconds. Default value is 5. For usage of the option see Hangfire documentation.
-        "AutomaticRetryAttempts": 5, //Default value is 10. Added to GlobalJobFilters.Filters via AutomaticRetryAttribute. For usage of the AutomaticRetryAttribute see Hangfire documentation.
+        "AutomaticRetryAttempts": 3, //Default value is 10. Added to GlobalJobFilters.Filters via AutomaticRetryAttribute. For usage of the AutomaticRetryAttribute see Hangfire documentation.
         "DelaysInSeconds": "1, 60, 3600" //Delays in seconds for retry jobs (i.e. "1, 60, 3600"). Default value is Hangfire default. For usage of the default algorithm see Hangfire documentation.
       }
     }
