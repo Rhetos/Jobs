@@ -9,13 +9,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Rhetos" Version="6.0.0-dev24011711054c6feb" />
-    <PackageReference Include="Rhetos.CommonConcepts" Version="6.0.0-dev24011711054c6feb" />
-    <PackageReference Include="Rhetos.Host" Version="6.0.0-dev24011711054c6feb" />
-    <PackageReference Include="Rhetos.Host.AspNet" Version="6.0.0-dev24011711054c6feb" />
-    <PackageReference Include="Rhetos.MsBuild" Version="6.0.0-dev24011711054c6feb" />
-    <PackageReference Include="Rhetos.MsSqlEf6" Version="6.0.0-dev24011711054c6feb" />
-    <PackageReference Include="Rhetos.RestGenerator" Version="6.0.0-dev24011711267bd4d47" />
+    <PackageReference Include="Rhetos" Version="6.0.0-dev25070815048d4fec" />
+    <PackageReference Include="Rhetos.CommonConcepts" Version="6.0.0-dev25070815048d4fec" />
+    <PackageReference Include="Rhetos.Host" Version="6.0.0-dev25070815048d4fec" />
+    <PackageReference Include="Rhetos.Host.AspNet" Version="6.0.0-dev25070815048d4fec" />
+    <PackageReference Include="Rhetos.MsBuild" Version="6.0.0-dev25070815048d4fec" />
+    <PackageReference Include="Rhetos.MsSqlEf6" Version="6.0.0-dev25070815048d4fec" />
+    <PackageReference Include="Rhetos.RestGenerator" Version="6.0.0-dev24012511457bd4d47" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
   </ItemGroup>
 

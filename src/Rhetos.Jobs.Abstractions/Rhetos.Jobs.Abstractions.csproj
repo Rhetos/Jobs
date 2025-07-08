@@ -6,8 +6,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Rhetos" Version="6.0.0-dev24011711054c6feb" />
-    <PackageReference Include="Rhetos.CommonConcepts" Version="6.0.0-dev24011711054c6feb" />
+    <PackageReference Include="Rhetos" Version="6.0.0-dev25070815048d4fec" />
+    <PackageReference Include="Rhetos.CommonConcepts" Version="6.0.0-dev25070815048d4fec" />
   </ItemGroup>
 
 </Project>
