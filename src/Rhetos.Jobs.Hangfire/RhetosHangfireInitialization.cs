@@ -21,16 +21,16 @@ using Hangfire;
 using Hangfire.SqlServer;
 using Rhetos.Utilities;
 using System;
-using System.Data.SqlClient;
 using System.Linq;
+using System.Reflection;
 
 namespace Rhetos.Jobs.Hangfire
 {
-	/// <summary>
-	/// Initializes Hangfire's global configuration, required for both the components that enqueue jobs
-	/// and the Hangfire job server that processes the jobs.
-	/// </summary>
-	public class RhetosHangfireInitialization
+    /// <summary>
+    /// Initializes Hangfire's global configuration, required for both the components that enqueue jobs
+    /// and the Hangfire job server that processes the jobs.
+    /// </summary>
+    public class RhetosHangfireInitialization
 	{
 		private readonly string _connectionString;
 		private readonly RhetosJobHangfireOptions _options;
@@ -38,33 +38,18 @@ namespace Rhetos.Jobs.Hangfire
         private static bool _initialized;
 		private static readonly object _initializationLock = new();
 
-		public RhetosHangfireInitialization(ConnectionString connectionString, RhetosJobHangfireOptions options, DatabaseSettings databaseSettings, RhetosJobHangfireOptions rhetosJobHangfireOptions)
+		public RhetosHangfireInitialization(ConnectionString connectionString, RhetosJobHangfireOptions options, ISqlUtility sqlUtility)
 		{
-			_connectionString = TrySetApplicationName(connectionString, databaseSettings, rhetosJobHangfireOptions);
+			if (options.SetConnectionStringApplicationName)
+			{
+                string hostAppName = Assembly.GetEntryAssembly()?.GetName()?.Name ?? "Rhetos";
+				string dbApplicationName = $"{hostAppName} Hangfire";
+                _connectionString = sqlUtility.SetApplicationName(connectionString, dbApplicationName);
+			}
+			else
+				_connectionString = connectionString;
 			
 			_options = options;
-		}
-
-		private static string TrySetApplicationName(string connectionString, DatabaseSettings databaseSettings, RhetosJobHangfireOptions rhetosJobHangfireOptions)
-		{
-			if (!rhetosJobHangfireOptions.SetConnectionStringApplicationName)
-				return connectionString;
-			if (string.IsNullOrEmpty(connectionString))
-                return connectionString;
-			if (databaseSettings.DatabaseLanguage != "MsSql")
-				return connectionString;
-			try
-			{
-				var sqlConnectionStringBuilder = new SqlConnectionStringBuilder(connectionString);
-				sqlConnectionStringBuilder.ApplicationName = $"{sqlConnectionStringBuilder.ApplicationName} Hangfire";
-				return sqlConnectionStringBuilder.ToString();
-			}
-#pragma warning disable CA1031 // Do not catch general exception types. This is just an optional information in connection string. It should not fail if the connection string format is not recognized.
-            catch
-#pragma warning restore CA1031 // Do not catch general exception types
-            {
-				return connectionString;
-			}
 		}
 
 		/// <summary>
