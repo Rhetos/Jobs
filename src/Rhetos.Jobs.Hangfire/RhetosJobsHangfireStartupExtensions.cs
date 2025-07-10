@@ -26,6 +26,7 @@ using Rhetos.Jobs;
 using Rhetos.Jobs.Hangfire;
 using Rhetos.Utilities;
 using System;
+using System.Linq;
 using System.Reflection;
 
 namespace Rhetos
@@ -56,6 +57,8 @@ namespace Rhetos
                         containerBuilder.RegisterType<RhetosHangfireInitialization>().SingleInstance();
                         containerBuilder.RegisterType<RhetosJobServerFactory>().SingleInstance();
                         containerBuilder.RegisterType<JobServersCollection>().SingleInstance();
+                        containerBuilder.RegisterType<JobStorageCollection>().SingleInstance();
+                        containerBuilder.RegisterType<JobStorageProvider>().InstancePerLifetimeScope();
 
                         // Automatic update of recurring jobs is activated by the 'implementation' package,
                         // not the 'interface' package (Rhetos.Jobs.Abstractions), event though those classes
@@ -99,8 +102,8 @@ namespace Rhetos
 
         private static void AddComponentsForHangfireDashboard(RhetosServiceCollectionBuilder builder)
         {
-            // AddHangfire method call is not needed for job scheduling and processing. It is needed for HangFire dashboard.
-            // It seems that the dashboard depends on DI components, while other features use GlobalConfiguration if available (see method InitializeGlobalConfiguration).
+            // It seems that AddHangfire method call is not needed for job scheduling and processing. It is needed for HangFire dashboard,
+            // because it depends on DI components, while other features use GlobalConfiguration if available (see method InitializeGlobalConfiguration).
             builder.Services.AddHangfire(_ => { });
 
             // Overrides IGlobalConfiguration resolver to call Rhetos Hangfire initialization before returning the GlobalConfiguration for HangFire dashboard.
@@ -120,17 +123,42 @@ namespace Rhetos
         /// <remarks>
         /// It creates a new instance of Hangfire <see cref="BackgroundJobServer"/>.
         /// It uses app settings from <see cref="RhetosJobHangfireOptions"/> for <see cref="BackgroundJobServerOptions"/>.
-        /// The Hangfire BackgroundJobServer will start processing background jobs immediately.
+        /// The created <see cref="BackgroundJobServer"/> will start processing background jobs immediately.
+        /// <para>
+        /// Remove this method call if the background jobs need to be processed in a separate application (e.g. a Windows service), instead of the current application.
+        /// </para>
         /// </remarks>
         /// <param name="configureOptions">
         /// Use this parameter to run multiple background job servers with different Hangfire options.
         /// If not provided, one background job server will be started with default settings.
-        /// The Action may be null for any background job server; it uses app setting for <see cref="RhetosJobHangfireOptions"/> by default,
+        /// The Action may be null for any background job server; it uses app setting for <see cref="RhetosJobHangfireOptions"/> by default.
         /// </param>
         public static IApplicationBuilder UseRhetosHangfireServer(this IApplicationBuilder applicationBuilder, params Action<BackgroundJobServerOptions>[] configureOptions)
         {
+            return UseRhetosHangfireServer(applicationBuilder, configureOptions?.Select(co => ((string)null, co))?.ToArray());
+        }
+
+        /// <summary>
+        /// Starts background job processing in the current application's process.
+        /// </summary>
+        /// <remarks>
+        /// It creates a new instance of Hangfire <see cref="BackgroundJobServer"/>.
+        /// It uses app settings from <see cref="RhetosJobHangfireOptions"/> for <see cref="BackgroundJobServerOptions"/>.
+        /// The created <see cref="BackgroundJobServer"/> will start processing background jobs immediately.
+        /// <para>
+        /// Remove this method call if the background jobs need to be processed in a separate application (e.g. a Windows service), instead of the current application.
+        /// </para>
+        /// </remarks>
+        /// <param name="configurations">
+        /// Use this parameter to run multiple background job servers with different Hangfire options.
+        /// If not provided, one background job server will be started with default settings.
+        /// The Action may be null for any background job server; it uses app setting for <see cref="RhetosJobHangfireOptions"/> by default.
+        /// Connection string can be null, if there is global connection string available for the application (for multitenant app with database per tenant, specify the connection strings).
+        /// </param>
+        public static IApplicationBuilder UseRhetosHangfireServer(this IApplicationBuilder applicationBuilder, (string connectionString, Action<BackgroundJobServerOptions> configureOptions)[] configurations)
+        {
             var rhetosHost = applicationBuilder.ApplicationServices.GetRequiredService<RhetosHost>();
-            UseRhetosHangfireServer(rhetosHost, configureOptions);
+            UseRhetosHangfireServer(rhetosHost, configurations);
             return applicationBuilder;
         }
 
@@ -145,22 +173,30 @@ namespace Rhetos
         /// Remove this method call if the background jobs need to be processed in a separate application (e.g. a Windows service), instead of the current application.
         /// </para>
         /// </remarks>
-        /// <param name="configureOptions">
+        /// <param name="configurations">
         /// Use this parameter to run multiple background job servers with different Hangfire options.
         /// If not provided, one background job server will be started with default settings.
-        /// The Action may be null for any background job server; it uses app setting for <see cref="RhetosJobHangfireOptions"/> by default,
+        /// The Action may be <see langword="null"/> for any background job server; it uses app setting for <see cref="RhetosJobHangfireOptions"/> by default.
+        /// Connection string can be <see langword="null"/>, if there is global connection string available for the application (for multitenant app with database per tenant, specify the connection strings).
         /// </param>
-        public static void UseRhetosHangfireServer(RhetosHost rhetosHost, params Action<BackgroundJobServerOptions>[] configureOptions)
+        public static void UseRhetosHangfireServer(RhetosHost rhetosHost, params (string connectionString, Action<BackgroundJobServerOptions> configureOptions)[] configurations)
         {
-            GlobalConfiguration.Configuration.UseAutofacActivator(rhetosHost.GetRootContainer());
+            var container = rhetosHost.GetRootContainer();
+            GlobalConfiguration.Configuration.UseAutofacActivator(container);
 
-            if (configureOptions.Length == 0)
-                configureOptions = new Action<BackgroundJobServerOptions>[] { null };
+            if (configurations.Length == 0)
+                configurations = [(null, null)];
 
-            foreach (var configure in configureOptions)
+            ConnectionString globalConnectionString = null;
+            container.TryResolve(out globalConnectionString);
+
+            foreach (var c in configurations)
             {
-                var jobServers = rhetosHost.GetRootContainer().Resolve<JobServersCollection>();
-                jobServers.CreateJobServer(configure);
+                if (globalConnectionString == null && c.connectionString == null)
+                    throw new ArgumentException($"There is no global connection string registered and the connection string parameter is not specified in the '{nameof(configurations)}' method parameter.");
+
+                var jobServers = container.Resolve<JobServersCollection>();
+                jobServers.CreateJobServer(c.connectionString ?? globalConnectionString, c.configureOptions);
             }
         }
 

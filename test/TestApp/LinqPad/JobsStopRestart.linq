@@ -20,7 +20,7 @@
   <Reference Relative="..\bin\Debug\net8.0\runtimes\win-x64\native\sni.dll">..\bin\Debug\net8.0\runtimes\win-x64\native\sni.dll</Reference>
   <Reference>..\runtimes\win\lib\net8.0\System.Diagnostics.EventLog.dll</Reference>
   <Reference>..\runtimes\win\lib\net8.0\System.Diagnostics.EventLog.Messages.dll</Reference>
-  <Reference Relative="..\bin\Debug\net8.0\runtimes\win\lib\net8.0\System.Runtime.Caching.dll">..\bin\Debug\net8.0\runtimes\win\lib\net8.0\System.Runtime.Caching.dll</Reference>
+  <Reference>..\bin\Debug\net8.0\runtimes\win\lib\net8.0\System.Runtime.Caching.dll</Reference>
   <Namespace>Autofac</Namespace>
   <Namespace>Rhetos</Namespace>
   <Namespace>Rhetos.Configuration.Autofac</Namespace>
@@ -67,9 +67,11 @@ void Main()
 		}
 
 		// Create Hangfire jobs server:
-		GlobalConfiguration.Configuration.UseAutofacActivator(rhetosHost.GetRootContainer());
-		var rhetosJobServerFactory = rhetosHost.GetRootContainer().Resolve<RhetosJobServerFactory>();
-		using (var hangfireJobServer = rhetosJobServerFactory.CreateHangfireJobServer())
+		var container = rhetosHost.GetRootContainer();
+		GlobalConfiguration.Configuration.UseAutofacActivator(container);
+		var rhetosJobServerFactory = container.Resolve<RhetosJobServerFactory>();
+		var connectionString = container.Resolve<ConnectionString>();
+		using (var hangfireJobServer = rhetosJobServerFactory.CreateHangfireJobServer(connectionString))
 		{
 			Console.WriteLine("Running a Hangfire job server.");
 			
@@ -190,8 +192,10 @@ void Test(RhetosHost rhetosHost, BackgroundJobServer hangfireJobServer)
 
 	Log("===========  RESTARTING ===========");
 
-	var jobServerFactory = rhetosHost.GetRootContainer().Resolve<RhetosJobServerFactory>();
-	using (var jobServer2 = jobServerFactory.CreateHangfireJobServer())
+	var container = rhetosHost.GetRootContainer();
+	var jobServerFactory = container.Resolve<RhetosJobServerFactory>();
+	var connectionString = container.Resolve<ConnectionString>();
+	using (var jobServer2 = jobServerFactory.CreateHangfireJobServer(connectionString))
 	{
 		Thread.Sleep(10000);
 

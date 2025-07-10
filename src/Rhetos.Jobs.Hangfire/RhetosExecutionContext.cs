@@ -63,17 +63,18 @@ namespace Rhetos.Jobs.Hangfire
 					_logger.Trace(() => $"ExecuteJob TransactionScopeContainer initialized.|{job.GetLogInfo(typeof(TExecuter))}");
 
 					var rhetosHangfireJobs = scope.Resolve<RhetosHangfireJobs>();
+					var jobStorageProvider = scope.Resolve<JobStorageProvider>();
 
-					// Checking if the operation that inserted the Hangfire job have completed successfully,
-					// to ensure the atomicity of that operation.
-					if (!rhetosHangfireJobs.JobConfirmationExists(job.Id))
+                    // Checking if the operation that inserted the Hangfire job have completed successfully,
+                    // to ensure the atomicity of that operation.
+                    if (!rhetosHangfireJobs.JobConfirmationExists(job.Id))
 					{
 						_logger.Trace(() =>
 							$"Job no longer exists in queue. Transaction in which was job created was rolled back. Terminating execution.|{job.GetLogInfo(typeof(TExecuter))}");
 
 						// Removing the recurring job from Hangfire queue, since it was not created successfully.
 						if (!string.IsNullOrEmpty(job.RecurringJobName))
-							RecurringJob.RemoveIfExists(job.RecurringJobName);
+                            jobStorageProvider.GetRecurringJobManager().RemoveIfExists(job.RecurringJobName);
 
 						return;
 					}

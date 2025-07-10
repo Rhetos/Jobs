@@ -67,11 +67,11 @@ namespace Rhetos.Jobs.Hangfire
         /// by calling <code>GlobalConfiguration.Configuration.UseAutofacActivator(rhetosHost.GetRootContainer());</code>
         /// </para>
         /// </remarks>
-        public void CreateJobServer(Action<BackgroundJobServerOptions> configureOptions = null)
+        public void CreateJobServer(string connectionString, Action<BackgroundJobServerOptions> configureOptions = null)
         {
             if (_options.InitializeHangfireServer)
             {
-                var jobServer = _rhetosJobServerFactory.CreateHangfireJobServer(configureOptions);
+                var jobServer = _rhetosJobServerFactory.CreateHangfireJobServer(connectionString, configureOptions);
                 Servers.Add(jobServer);
             }
         }

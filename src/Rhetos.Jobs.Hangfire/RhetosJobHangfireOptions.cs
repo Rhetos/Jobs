@@ -62,7 +62,6 @@ namespace Rhetos.Jobs.Hangfire
 		/// </summary>
 		public int SlidingInvisibilityTimeout { get; set; } = 300;
 
-
         /// <summary>
         /// Value is in seconds. Default value is 0. For usage of the option see Hangfire documentation.
         /// </summary>

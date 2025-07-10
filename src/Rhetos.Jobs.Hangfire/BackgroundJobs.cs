@@ -17,14 +17,13 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using Hangfire;
 using Rhetos.Logging;
 using Rhetos.Persistence;
 using Rhetos.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using Hangfire;
-using Hangfire.States;
 
 namespace Rhetos.Jobs.Hangfire
 {
@@ -34,8 +33,8 @@ namespace Rhetos.Jobs.Hangfire
 	public class BackgroundJobs : IBackgroundJobs
 	{
 		private readonly IUserInfo _userInfo;
-        private readonly RhetosHangfireInitialization _hangfireInitialization;
         private readonly RhetosHangfireJobs _rhetosHangfireJobs;
+        private readonly JobStorageProvider _jobStorageProvider;
         private readonly ILogger _logger;
 		private readonly ILogger _performanceLogger;
 
@@ -46,12 +45,12 @@ namespace Rhetos.Jobs.Hangfire
 			ILogProvider logProvider,
 			IPersistenceTransaction persistenceTransaction,
 			IUserInfo userInfo,
-			RhetosHangfireInitialization hangfireInitialization,
-			RhetosHangfireJobs rhetosHangfireJobs)
+			RhetosHangfireJobs rhetosHangfireJobs,
+			JobStorageProvider jobStorageProvider)
 		{
 			_userInfo = userInfo;
-            _hangfireInitialization = hangfireInitialization;
             _rhetosHangfireJobs = rhetosHangfireJobs;
+            _jobStorageProvider = jobStorageProvider;
             _logger = logProvider.GetLogger(InternalExtensions.LoggerName);
 			_performanceLogger = logProvider.GetLogger($"Performance.{InternalExtensions.LoggerName}");
 			persistenceTransaction.BeforeClose += PersistenceTransactionOnBeforeClose;
@@ -79,14 +78,15 @@ namespace Rhetos.Jobs.Hangfire
 
         /// <summary>
         /// Hangfire's convention is to use lowercase for queue names.
-		/// If queue name is not specified, the default queue is used.
+        /// If queue name is not specified, the default queue is used.
         /// </summary>
+#pragma warning disable CA1308 // Normalize strings to uppercase. Hangfire's convention is to use lowercase queue names.
         private static string NormalizeQueueName(string queue) => queue?.ToLowerInvariant() ?? HangfireDefaultQueueName;
+#pragma warning restore CA1308 // Normalize strings to uppercase
 
         public void AddJob<TExecuter, TParameter>(TParameter parameter, bool executeInUserContext, object aggregationGroup = null, JobAggregator<TParameter> jobAggregator = null, string queue = null)
 			where TExecuter : IJobExecuter<TParameter>
         {
-			_hangfireInitialization.InitializeGlobalConfiguration();
 			queue = NormalizeQueueName(queue);
 
 			var newJob = new JobParameter<TParameter>
@@ -136,8 +136,9 @@ namespace Rhetos.Jobs.Hangfire
 				}
 			}
 
-				// Not enqueuing immediately to Hangfire, to allow later duplicate jobs to suppress the current one.
-			schedule.EnqueueJob = () => BackgroundJob.Enqueue<RhetosExecutionContext<TExecuter, TParameter>>(
+			// Not enqueuing immediately to Hangfire, to allow later duplicate jobs to suppress the current one.
+			var backgroundJobClient = _jobStorageProvider.GetBackgroundJobClient();
+            schedule.EnqueueJob = () => backgroundJobClient.Enqueue<RhetosExecutionContext<TExecuter, TParameter>>(
 				context => context.ExecuteUnitOfWork(newJob, queue));
 
 			_jobInstances.Add(schedule);
@@ -152,7 +153,6 @@ namespace Rhetos.Jobs.Hangfire
 		public void SetRecurringJob<TExecuter, TParameter>(string name, string cronExpression, TParameter parameter, string queue = null, string runAs = null)
 			where TExecuter : IJobExecuter<TParameter>
 		{
-			_hangfireInitialization.InitializeGlobalConfiguration();
 			queue = NormalizeQueueName(queue);
 
 			// The name is required for recurring jobs in order to:
@@ -170,19 +170,21 @@ namespace Rhetos.Jobs.Hangfire
 				Parameter = parameter,
 			};
 
-			var schedule = new JobSchedule
+			var recurringJobManager = _jobStorageProvider.GetRecurringJobManager();
+
+            var schedule = new JobSchedule
 			{
 				Job = newJob,
 				ExecuterType = typeof(TExecuter),
 				ParameterType = typeof(TParameter),
 				AggregationGroup = null,
-				EnqueueJob = () => RecurringJob.AddOrUpdate<RhetosExecutionContext<TExecuter, TParameter>>(
+				EnqueueJob = () => recurringJobManager.AddOrUpdate<RhetosExecutionContext<TExecuter, TParameter>>(
 					name, context => context.ExecuteUnitOfWork(newJob, queue), cronExpression, TimeZoneInfo.Local, queue)
 			};
 
 			_jobInstances.Add(schedule);
 			_logger.Trace(() => $"Recurring job created.|{name}|{schedule.GetLogInfo()}");
-	}
+		}
 
 		public IEnumerable<string> ListRecurringJobs()
 		{
@@ -191,8 +193,6 @@ namespace Rhetos.Jobs.Hangfire
 
 		public void RemoveRecurringJob(string name)
         {
-			_hangfireInitialization.InitializeGlobalConfiguration();
-
 			if (string.IsNullOrEmpty(name))
                 throw new ArgumentException("Recurring job must have a name.", nameof(name));
 
@@ -202,7 +202,9 @@ namespace Rhetos.Jobs.Hangfire
 				_rhetosHangfireJobs.DeleteJobConfirmation(id.Value);
             else
                 _logger.Trace($"Missing job confirmation entry for '{name}'.");
-            RecurringJob.RemoveIfExists(name);
+
+            var recurringJobManager = _jobStorageProvider.GetRecurringJobManager();
+            recurringJobManager.RemoveIfExists(name);
         }
     }
 }

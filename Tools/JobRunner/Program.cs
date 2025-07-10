@@ -48,15 +48,17 @@ namespace JobRunner
             ConsoleLogger.MinLevel = EventType.Trace; // Use EventType.Info for less detailed log output.
             using (var rhetosHost = RhetosHost.CreateFrom(rhetosAppPath, ConfigureRhetosHostForConsoleApp))
             {
+                var container = rhetosHost.GetRootContainer();
                 string appName = typeof(Program).Assembly.GetName().Name;
-                var logger = rhetosHost.GetRootContainer().Resolve<ILogProvider>().GetLogger(appName);
+                var logger = container.Resolve<ILogProvider>().GetLogger(appName);
                 // Configure Hangfire to use Rhetos IoC container:
-                GlobalConfiguration.Configuration.UseAutofacActivator(rhetosHost.GetRootContainer());
+                GlobalConfiguration.Configuration.UseAutofacActivator(container);
                 // RhetosJobServerFactory will use Hangfire configuration from the Rhetos app:
-                var rhetosJobServerFactory = rhetosHost.GetRootContainer().Resolve<RhetosJobServerFactory>();
+                var rhetosJobServerFactory = container.Resolve<RhetosJobServerFactory>();
                 // Create and start a Hangfire jobs server:
                 // Multiple servers may be created if needed, with different configurations, see CreateHangfireJobServer arguments.
-                using (var hangfireJobServer = rhetosJobServerFactory.CreateHangfireJobServer())
+                var connectionString = container.Resolve<ConnectionString>();
+                using (var hangfireJobServer = rhetosJobServerFactory.CreateHangfireJobServer(connectionString, null))
                 {
                     logger.Info("Started a Hangfire job server.");
                     Console.WriteLine("Press any key to stop the application.");

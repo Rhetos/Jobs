@@ -26,18 +26,18 @@ namespace Rhetos.Jobs.Hangfire
     /// Initializes Hangfire server for background job processing in a Rhetos applications.
     /// </summary>
     /// <remarks>
-    /// This class is intended for direct control over Hangfire job server lifetime in unit tests, CLI utilities or Windows services.
+    /// This class is intended for direct control over Hangfire job server *lifetime* in unit tests, CLI utilities or Windows services.
     /// For simpler usage alternative see <see cref="JobServersCollection"/> or <see cref="RhetosJobsHangfireStartupExtensions.UseRhetosHangfireServer(Microsoft.AspNetCore.Builder.IApplicationBuilder, Action{BackgroundJobServerOptions}[])"/>.
     /// </remarks>
     public class RhetosJobServerFactory
     {
-        private readonly RhetosHangfireInitialization _rhetosHangfireInitialization;
         private readonly RhetosJobHangfireOptions _options;
+        private readonly JobStorageCollection _jobStorageCollection;
 
-        public RhetosJobServerFactory(RhetosHangfireInitialization rhetosHangfireInitialization, RhetosJobHangfireOptions options)
+        public RhetosJobServerFactory(RhetosJobHangfireOptions options, JobStorageCollection jobStorageCollection)
         {
-            _rhetosHangfireInitialization = rhetosHangfireInitialization;
             _options = options;
+            _jobStorageCollection = jobStorageCollection;
         }
 
         /// <summary>
@@ -54,10 +54,8 @@ namespace Rhetos.Jobs.Hangfire
         /// <param name="configureOptions">
         /// Overrides configuration loaded form app settings.
         /// </param>
-        public BackgroundJobServer CreateHangfireJobServer(Action<BackgroundJobServerOptions> configureOptions = null)
+        public BackgroundJobServer CreateHangfireJobServer(string connectionString, Action<BackgroundJobServerOptions> configureOptions = null)
         {
-            _rhetosHangfireInitialization.InitializeGlobalConfiguration();
-
             var hangfireOptions = new BackgroundJobServerOptions
             {
                 ServerName = $"{Environment.MachineName}.{AppDomain.CurrentDomain.FriendlyName}",
@@ -74,7 +72,8 @@ namespace Rhetos.Jobs.Hangfire
 
             configureOptions?.Invoke(hangfireOptions);
 
-            return new BackgroundJobServer(hangfireOptions);
+            JobStorage jobStorage = _jobStorageCollection.GetStorage(connectionString);
+            return new BackgroundJobServer(hangfireOptions, jobStorage);
         }
     }
 }
