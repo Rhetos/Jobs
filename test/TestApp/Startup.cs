@@ -26,6 +26,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 using Rhetos;
+using Rhetos.Jobs.Hangfire;
 using System;
 
 namespace TestApp
@@ -82,7 +83,12 @@ namespace TestApp
             }
 
             app.UseRhetosHangfireServer(); // Start background job processing in current application.
-            app.UseHangfireDashboard();
+
+            var rhetosHost = app.ApplicationServices.GetRequiredService<RhetosHost>();
+            var connectionString = rhetosHost.GetRootContainer().Resolve<Rhetos.Utilities.ConnectionString>();
+            var jobStorageCollection = rhetosHost.GetRootContainer().Resolve<JobStorageCollection>();
+            var jobStorage = jobStorageCollection.GetStorage(connectionString);
+            app.UseHangfireDashboard(pathMatch: "/hangfire", storage: jobStorage);
 
             app.UseHttpsRedirection();
 
@@ -95,7 +101,7 @@ namespace TestApp
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
-                endpoints.MapHangfireDashboard();
+                endpoints.MapHangfireDashboard(storage: jobStorage);
             });
         }
     }

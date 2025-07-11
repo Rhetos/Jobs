@@ -104,16 +104,13 @@ namespace Rhetos
         {
             // It seems that AddHangfire method call is not needed for job scheduling and processing. It is needed for HangFire dashboard,
             // because it depends on DI components, while other features use GlobalConfiguration if available (see method InitializeGlobalConfiguration).
-            builder.Services.AddHangfire(_ => { });
-
-            // Overrides IGlobalConfiguration resolver to call Rhetos Hangfire initialization before returning the GlobalConfiguration for HangFire dashboard.
-            // This is needed for apps that do not call UseRhetosHangfireServer() or have some other way of triggering RhetosHangfireInitialization.
-            builder.Services.AddSingleton<IGlobalConfiguration>(serviceProvider =>
+            builder.Services.AddHangfire((serviceProvider, globalConfiguration) =>
             {
+                // Calls Rhetos Hangfire initialization before returning the GlobalConfiguration for HangFire dashboard.
+                // This is needed for apps that do not call UseRhetosHangfireServer() or have some other way of triggering RhetosHangfireInitialization.
                 var rhetosHost = serviceProvider.GetRequiredService<RhetosHost>();
                 var rhetosHangfireInitialization = rhetosHost.GetRootContainer().Resolve<RhetosHangfireInitialization>();
                 rhetosHangfireInitialization.InitializeGlobalConfiguration();
-                return GlobalConfiguration.Configuration;
             });
         }
 
