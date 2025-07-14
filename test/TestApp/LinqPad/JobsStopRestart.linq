@@ -43,20 +43,14 @@
   <IncludeAspNet>true</IncludeAspNet>
 </Query>
 
-
-// ISSUE: Sometimes the LINQPad process needs to be restared to avoid exception:
-//[Error] RhetosJobs: ExecuteJob exception: Autofac.Core.Registration.ComponentNotRegisteredException: The requested service 'TestJobExecuter' has not been registered. To avoid this exception, either register a component to provide the service, check for service registration using IsRegistered(), or use the ResolveOptional() method to resolve an optional dependency.
-//   at Autofac.ResolutionExtensions.ResolveService(IComponentContext context, Service service, IEnumerable`1 parameters) in /_/src/Autofac/ResolutionExtensions.cs:line 878
-//   at Autofac.ResolutionExtensions.Resolve(IComponentContext context, Type serviceType, IEnumerable`1 parameters) in /_/src/Autofac/ResolutionExtensions.cs:line 342
-//   at Autofac.ResolutionExtensions.Resolve[TService](IComponentContext context, IEnumerable`1 parameters) in /_/src/Autofac/ResolutionExtensions.cs:line 294
-//   at Autofac.ResolutionExtensions.Resolve[TService](IComponentContext context) in /_/src/Autofac/ResolutionExtensions.cs:line 277
-//   at Rhetos.UnitOfWorkScope.Resolve[T]()
-//   at Rhetos.Jobs.Hangfire.RhetosExecutionContext`2.ExecuteUnitOfWork(JobParameter`1 job)
+// IN CASE OF ERROR "The requested service 'TestJobExecuter' has not been registered.", RESTART THE LINQPad PROCESS.
 
 void Main()
 {
+	var stopwatch = new Stopwatch();
 	ConsoleLogger.MinLevel = EventType.Trace; // Use EventType.Trace for more detailed log.
 	string rhetosAppPath = Path.Combine(Path.GetDirectoryName(Util.CurrentQueryPath), @"..\bin\debug\net8.0\TestApp.dll");
+	bool test1 = true; // Restart the LINQPad process when changing this value.
 	using (var rhetosHost = RhetosHost.CreateFrom(rhetosAppPath, ConfigureRhetosHost))
 	{
 		// Testing if application and database work:
@@ -68,22 +62,32 @@ void Main()
 
 		// Create Hangfire jobs server:
 		var container = rhetosHost.GetRootContainer();
-		GlobalConfiguration.Configuration.UseAutofacActivator(container);
 		var rhetosJobServerFactory = container.Resolve<RhetosJobServerFactory>();
-		var connectionString = container.Resolve<ConnectionString>();
-		using (var hangfireJobServer = rhetosJobServerFactory.CreateHangfireJobServer(connectionString))
+		using (var hangfireJobServer = rhetosJobServerFactory.CreateHangfireJobServer(container))
 		{
 			Console.WriteLine("Running a Hangfire job server.");
 			
-			Test(rhetosHost, hangfireJobServer);
-			//Test2(rhetosHost, hangfireJobServer); // Do not run after Test(). Not compatible.
+			if (test1)
+				Test(rhetosHost, hangfireJobServer);
+			else
+				Test2(rhetosHost, hangfireJobServer); // Do not run after Test(). Not compatible.
 
 			Console.WriteLine("Stopping the Hangfire job server.");
 			Log("===========  Stopping the Hangfire job server ===========");
+			stopwatch.Restart();
 		}
 		Log("===========  HANGFIRE JOB SERVER DISPOSED ===========");
+		if (!test1)
+			stopwatch.Elapsed.TotalSeconds.Dump(@"TotalSeconds. Expected: Disposing of hangfireJobServer in Main() should take 15 seconds waiting for this job to complete, see RhetosJobHangfireOptions.ShutdownTimeout.");
+			//After that, and after rhetosHost is disposed in Main(), this job should run for 5 more seconds,
+			//then report an error in LINQPad output when trying to complete the transaction (UnitOfWorkScope.CommitAndClose)
+			//because the lifetime scope has already been disposed.");
 	}
 	Log("===========  RHETOS HOST DISPOSED ===========");
+	if (!test1)
+		"".Dump(@"After rhetosHost is disposed in Main(), this job should run for 5 more seconds,"
+			+ " then report an error in LINQPad output when trying to complete the transaction (UnitOfWorkScope.CommitAndClose)"
+			+ " because the lifetime scope has already been disposed.");
 }
 
 private static void ConfigureRhetosHost(IRhetosHostBuilder rhetosHostBuilder)
@@ -96,7 +100,7 @@ private static void ConfigureRhetosHost(IRhetosHostBuilder rhetosHostBuilder)
 			containerBuilder.RegisterType<ProcessUserInfo>().As<IUserInfo>();
 			containerBuilder.RegisterType<ConsoleLogProvider>().As<ILogProvider>();
 			// Test job executer:
-			containerBuilder.RegisterType<TestJobExecuter>();
+			containerBuilder.RegisterType<TestJobExecuter>(); // IN CASE OF ERROR, RESTART THE LINQPad PROCESS TO AVOID: The requested service 'TestJobExecuter' has not been registered.
 		});
 }
 
@@ -131,20 +135,13 @@ void Test2(RhetosHost rhetosHost, BackgroundJobServer hangfireJobServer)
 	Thread.Sleep(100); // Wait enough for job to start, but not to finish.
 
 	Log("===========  HANGFIRE JOB SERVER DISPOSING ===========");
-
-	// Expected:
-	// Disposing of hangfireJobServer in Main() should take 15 seconds waiting for this job to complete
-	// see RhetosJobHangfireOptions.ShutdownTimeout.
-	// After that, and after rhetosHost is disposed in Main(), this job should run for 5 more seconds,
-	// then report an error in LINQPad output when trying to complete the transaction (UnitOfWorkScope.CommitAndClose)
-	// because the lifetime scope has already been disposed.
 }
 
 void Test(RhetosHost rhetosHost, BackgroundJobServer hangfireJobServer)
 {
 	Log("===========  INITIAL STATE ===========");
 	
-	rhetosHost.ReportHangfireDatabaseJobs(-1).Dump("Existing jobs");
+	rhetosHost.ReportHangfireDatabaseJobs(-1).Dump("Existing jobs. Expected: All previous jobs succeeded. If not, delete all Hangfire tables to reset the database state.");
 	long lastJobId = rhetosHost.GetHangfireDatabaseLastJobId();
 	Log($"lastJobId: {lastJobId}");
 	
@@ -162,14 +159,14 @@ void Test(RhetosHost rhetosHost, BackgroundJobServer hangfireJobServer)
 
 	Thread.Sleep(100); // Wait enough for some jobs to start, but not to finish.
 
-	rhetosHost.ReportHangfireDatabaseJobs(lastJobId).Dump("Initially started jobs"); // Expected: 2 processing (default worker count), 3 pending.
+	rhetosHost.ReportHangfireDatabaseJobs(lastJobId).Dump("Initially started jobs. Expected: 2 processing (default worker count), 3 Enqueued. Remove the recurring jobs if there are more.");
 
 	Log("===========  STOPPING ===========");
 	
 	hangfireJobServer.SendStop();
 	hangfireJobServer.Dispose(); // Waits some time for running jobs to finish.
 
-	rhetosHost.ReportHangfireDatabaseJobs(lastJobId).Dump("After waiting for job server to stop"); // Expected: 2 completed, 3 pending.
+	rhetosHost.ReportHangfireDatabaseJobs(lastJobId).Dump("After waiting for job server to stop. Expected: 2 completed, 3 Enqueued.");
 
 	Log("===========  STOPPED ===========");
 
@@ -188,18 +185,18 @@ void Test(RhetosHost rhetosHost, BackgroundJobServer hangfireJobServer)
 
 	Thread.Sleep(10000);
 
-	rhetosHost.ReportHangfireDatabaseJobs(lastJobId).Dump("New job added. Background workers still stopped."); // Expected: 2 completed, 4 pending.
+	rhetosHost.ReportHangfireDatabaseJobs(lastJobId).Dump("New job added. Background workers still stopped. Expected: 2 completed, 4 Enqueued.");
 
 	Log("===========  RESTARTING ===========");
 
 	var container = rhetosHost.GetRootContainer();
 	var jobServerFactory = container.Resolve<RhetosJobServerFactory>();
-	var connectionString = container.Resolve<ConnectionString>();
-	using (var jobServer2 = jobServerFactory.CreateHangfireJobServer(connectionString))
+	var connectionString = container.Resolve<ConnectionString>().Dump();
+	using (var jobServer2 = jobServerFactory.CreateHangfireJobServer(container))
 	{
 		Thread.Sleep(10000);
 
-		rhetosHost.ReportHangfireDatabaseJobs(lastJobId).Dump("Background workers restarted."); // Expected: 6 completed.
+		rhetosHost.ReportHangfireDatabaseJobs(lastJobId).Dump("Background workers restarted. Expected: 6 completed.");
 	}
 
 	Log("===========  DONE ===========");

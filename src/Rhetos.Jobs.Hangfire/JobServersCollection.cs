@@ -17,8 +17,10 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using Autofac;
 using Hangfire;
 using Rhetos.Logging;
+using Rhetos.Utilities;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -46,7 +48,7 @@ namespace Rhetos.Jobs.Hangfire
         /// <summary>
         /// List of created job servers that will be shutdown when host is closing.
         /// </summary>
-        public ConcurrentBag<BackgroundJobServer> Servers { get; private set; } = new();
+        public ConcurrentBag<(BackgroundJobServer BackgroundJobServer, ILifetimeScope OwnedLifetimeScope)> Servers { get; private set; } = [];
 
         public JobServersCollection(RhetosJobHangfireOptions options, RhetosJobServerFactory rhetosJobServerFactory, ILogProvider logProvider)
         {
@@ -62,18 +64,57 @@ namespace Rhetos.Jobs.Hangfire
         /// <remarks>
         /// The Hangfire job server will not be created if option <see cref="RhetosJobHangfireOptions.InitializeHangfireServer"/>
         /// is set to <see langword="false"/>.
-        /// <para>
-        /// Before creating job server, the Hangfire's GlobalConfiguration must be configured to use Rhetos host DI container,
-        /// by calling <code>GlobalConfiguration.Configuration.UseAutofacActivator(rhetosHost.GetRootContainer());</code>
-        /// </para>
         /// </remarks>
-        public void CreateJobServer(string connectionString, Action<BackgroundJobServerOptions> configureOptions = null)
+        /// <param name="ownLifetimeScope">
+        /// Set to true if the lifetime scope is created specifically for the job server, and <see cref="JobServersCollection"/> should dispose the lifetime scope when disposing the container.
+        /// </param>
+        public void CreateJobServer(ILifetimeScope lifetimeScope, Action<BackgroundJobServerOptions> configureOptions = null, bool ownLifetimeScope = false)
         {
             if (_options.InitializeHangfireServer)
             {
-                var jobServer = _rhetosJobServerFactory.CreateHangfireJobServer(connectionString, configureOptions);
-                Servers.Add(jobServer);
+                var jobServer = _rhetosJobServerFactory.CreateHangfireJobServer(lifetimeScope, configureOptions);
+                Servers.Add((jobServer, ownLifetimeScope ? lifetimeScope : null));
             }
+        }
+
+        /// <summary>
+        /// Creates a new instance of the Hangfire jobs server that runs in background,
+        /// and registers it for disposal when Rhetos DI closes.
+        /// </summary>
+        /// <remarks>
+        /// The Hangfire job server will not be created if option <see cref="RhetosJobHangfireOptions.InitializeHangfireServer"/>
+        /// is set to <see langword="false"/>.
+        /// </remarks>
+        /// <param name="configureOptions">
+        /// The configuration parameter may be <see langword="null"/>; it uses app setting for <see cref="RhetosJobHangfireOptions"/> by default.
+        /// </param>
+        /// <param name="connectionString">
+        /// Connection string should be <see langword="null"/>, if there is global connection string available for the application.
+        /// If the connection string is specified, the job server will be created in a separate lifetime scope with custom connection string.
+        /// Use this for multitenant apps with separate database per tenant.
+        /// </param>
+        public void CreateJobServer(RhetosHost rhetosHost, Action<BackgroundJobServerOptions> configureOptions = null, string connectionString = null)
+        {
+            ILifetimeScope rootContainer = rhetosHost.GetRootContainer();
+            ILifetimeScope jobServerLifetimeScope;
+            if (connectionString != null)
+            {
+                var unitOfWorkFactory = new UnitOfWorkFactory();
+                jobServerLifetimeScope = rootContainer.BeginLifetimeScope(builder =>
+                {
+                    builder.RegisterInstance(new ConnectionString(connectionString));
+                    builder.RegisterInstance(unitOfWorkFactory).As<UnitOfWorkFactory>().As<IUnitOfWorkFactory>();
+                });
+                unitOfWorkFactory.Initialize(jobServerLifetimeScope);
+            }
+            else
+            {
+                jobServerLifetimeScope = rootContainer;
+                if (RhetosJobsHangfireStartupExtensions.TryGetGlobalConnectionString(rootContainer) == null)
+                    throw new ArgumentException($"The connection string is not specified in this method call, and there is no global connection string available.");
+            }
+
+            CreateJobServer(jobServerLifetimeScope, configureOptions, ownLifetimeScope: jobServerLifetimeScope != rootContainer);
         }
 
         protected virtual void Dispose(bool disposing)
@@ -109,41 +150,43 @@ namespace Rhetos.Jobs.Hangfire
             if (Servers == null)
                 return;
 
-            var servers = new List<BackgroundJobServer>();
+            var servers = new List<(BackgroundJobServer BackgroundJobServer, ILifetimeScope OwnedLifetimeScope)>();
             while (Servers.TryTake(out var server))
                 servers.Add(server);
 
-            if (servers.Any())
+            if (servers.Count != 0)
                 _logger.Trace($"{nameof(ShutdownJobServers)} started. {servers.Count} job servers.");
 
             // Sending stop signals to all servers at once. This will avoid waiting for each independently (from Hangfire documentation).
-            foreach (var server in servers)
-                try
-                {
-                    server.SendStop();
-                }
-#pragma warning disable CA1031 // Do not catch general exception types. Ignoring possible issues if a server is already disposed on shutdown.
-                catch
-#pragma warning restore CA1031 // Do not catch general exception types
-                {
-                    // Ignoring possible issues if any server is already disposed on shutdown.
-                }
+            TryForeach(servers, server => server.BackgroundJobServer.SendStop());
 
             // Waiting for each server to stop.
-            foreach (var server in servers)
+            TryForeach(servers, server => server.BackgroundJobServer.Dispose());
+
+            // Dispose any lifetime scopes that were created specifically for the job server, and not managed outside of the job server collection.
+            TryForeach(servers.Select(s => s.OwnedLifetimeScope).Where(scope => scope != null), ownedLifetimeScope => ownedLifetimeScope.Dispose());
+
+            if (servers.Count != 0)
+                _logger.Trace($"{nameof(ShutdownJobServers)} finished.");
+        }
+
+        /// <summary>
+        /// Executes the action on each of the objects in the list. It ignores any exceptions and continues with other objects in the list.
+        /// </summary>
+        private static void TryForeach<T>(IEnumerable<T> objects, Action<T> action)
+        {
+            foreach (var o in objects)
+#pragma warning disable CA1031 // Do not catch general exception types
                 try
                 {
-                    server.Dispose();
+                    action.Invoke(o);
                 }
-#pragma warning disable CA1031 // Do not catch general exception types. Ignoring possible issues if a server is already disposed on shutdown.
                 catch
-#pragma warning restore CA1031 // Do not catch general exception types
                 {
-                    // Ignoring possible issues if any server is already disposed on shutdown.
+                    // Ignoring possible issues if any server is already disposed on shutdown, or other disposal issues.
+                    // The server and scope disposal is usually happening on application shutdown.
                 }
-
-            if (servers.Any())
-                _logger.Trace($"{nameof(ShutdownJobServers)} finished.");
+#pragma warning restore CA1031 // Do not catch general exception types
         }
     }
 }

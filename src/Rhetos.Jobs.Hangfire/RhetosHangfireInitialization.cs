@@ -36,7 +36,7 @@ namespace Rhetos.Jobs.Hangfire
 		private static readonly object _initializationLock = new();
 
         public RhetosHangfireInitialization(RhetosJobHangfireOptions rhetosJobHangfireOptions)
-		{
+        {
             _rhetosJobHangfireOptions = rhetosJobHangfireOptions;
         }
 
@@ -57,9 +57,13 @@ namespace Rhetos.Jobs.Hangfire
                         GlobalConfiguration.Configuration
                             .SetDataCompatibilityLevel(CompatibilityLevel.Version_170)
                             .UseSimpleAssemblyNameTypeSerializer()
-                            .UseRecommendedSerializerSettings()
-                            //.UseSqlServerStorage(_connectionString, _sqlServerStorageOptions); // There is no global Hangfire storage, to support multitenant applications with database per tenant.
-                            // The following lines are copied from inside UseSqlServerStorage => UseSqlServerStorageCommonMetrics.
+                            .UseRecommendedSerializerSettings();
+
+                        // The call to .UseSqlServerStorage(_connectionString, _sqlServerStorageOptions) is removed, so that
+                        // there is no global Hangfire storage by default, in order to support multitenant applications with separate database per tenant.
+                        // The following lines with UseDashboardMetric are copied from inside UseSqlServerStorage => UseSqlServerStorageCommonMetrics.
+                        // The call to UseStorage from UseSqlServerStorage is separated below, it the global connection string is configured.
+                        GlobalConfiguration.Configuration
                             .UseDashboardMetric(SqlServerStorage.SchemaVersion)
                             .UseDashboardMetric(SqlServerStorage.ActiveConnections)
                             .UseDashboardMetric(SqlServerStorage.TotalConnections)
@@ -67,7 +71,7 @@ namespace Rhetos.Jobs.Hangfire
                             .UseDashboardMetric(SqlServerStorage.DataFilesSize)
                             .UseDashboardMetric(SqlServerStorage.LogFilesSize);
 
-						var automaticRetryAttribute = new AutomaticRetryAttribute { Attempts = _rhetosJobHangfireOptions.AutomaticRetryAttempts };
+                        var automaticRetryAttribute = new AutomaticRetryAttribute { Attempts = _rhetosJobHangfireOptions.AutomaticRetryAttempts };
 						if (!string.IsNullOrEmpty(_rhetosJobHangfireOptions.DelaysInSeconds))
 							automaticRetryAttribute.DelaysInSeconds = ParseDelaysInSeconds();
 
@@ -78,6 +82,18 @@ namespace Rhetos.Jobs.Hangfire
 #pragma warning restore S2696 // Instance members should not write to "static" fields
                     }
 		}
+
+        /// <summary>
+        /// This method is intended for regular apps with a global connection string, in order to
+        /// simplify Hangfire Dashboard initialization.
+        /// In a multitenant app with separate database per tenant, the Hangfire Dashboard
+        /// needs to be initialized separately for each database, by using <see cref="JobStorageCollection"/>
+        /// to get the job storage for each database/tenant, instead of calling this methods.
+        /// </summary>
+        public virtual void InitializeGlobalJobStorage(JobStorage globalJobStorage)
+        {
+            GlobalConfiguration.Configuration.UseStorage(globalJobStorage);
+        }
 
         private int[] ParseDelaysInSeconds() =>
             _rhetosJobHangfireOptions.DelaysInSeconds.Split(',').Select(x => int.Parse(x, CultureInfo.InvariantCulture)).ToArray();

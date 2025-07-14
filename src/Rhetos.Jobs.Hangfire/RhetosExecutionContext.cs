@@ -40,7 +40,7 @@ namespace Rhetos.Jobs.Hangfire
 
         public RhetosExecutionContext(ILogProvider logProvider, RhetosJobHangfireOptions options, IUnitOfWorkFactory unitOfWorkFactory)
 		{
-			// Note: The constructor parameters are resolved from the root DI container (set in UseAutofacActivator call in RhetosJobsService class).
+			// Note: The constructor parameters are resolved from the DI container (set in job "activator").
 			_logger = logProvider.GetLogger(InternalExtensions.LoggerName);
 			_options = options;
             _unitOfWorkFactory = unitOfWorkFactory;
@@ -97,8 +97,8 @@ namespace Rhetos.Jobs.Hangfire
 		}
 
 		private void CustomizeScope(ContainerBuilder builder, string userName = null, bool? executeAsAnonymous = null)
-		{
-			if (!string.IsNullOrWhiteSpace(userName))
+        {
+            if (!string.IsNullOrWhiteSpace(userName))
 				builder.RegisterInstance(new JobExecuterUserInfo(userName)).As<IUserInfo>();
 			else if (executeAsAnonymous == true)
 				builder.RegisterInstance(new JobExecuterUserInfo()).As<IUserInfo>();

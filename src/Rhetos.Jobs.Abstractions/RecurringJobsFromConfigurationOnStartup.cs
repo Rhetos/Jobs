@@ -17,7 +17,9 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using Autofac;
 using Rhetos.Logging;
+using Rhetos.Utilities;
 
 namespace Rhetos.Jobs
 {
@@ -43,11 +45,11 @@ namespace Rhetos.Jobs
         /// <remarks>
         /// This method will not create the recurring jobs if the configuration option <see cref="RecurringJobsOptions.UpdateRecurringJobsFromConfigurationOnStartup"/> is disabled.
         /// </remarks>
-        public static void Initialize(RhetosHost rhetosHost)
+        public static void Initialize(RhetosHost rhetosHost, string connectionString)
         {
             // Application startup initialization is executed in the root container scope. We cannot use the root scope
             // for database writes, because the database transaction is committed only when the scope is closed.
-            using (var scope = rhetosHost.CreateScope())
+            using (var scope = rhetosHost.CreateScope(builder => builder.RegisterInstance(new ConnectionString(connectionString))))
             {
                 var recurringJobsFromConfigurationOnStartup = scope.Resolve<RecurringJobsFromConfigurationOnStartup>();
                 recurringJobsFromConfigurationOnStartup.Initialize();

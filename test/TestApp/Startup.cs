@@ -28,6 +28,8 @@ using Microsoft.OpenApi.Models;
 using Rhetos;
 using Rhetos.Jobs.Hangfire;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace TestApp
 {
@@ -82,13 +84,19 @@ namespace TestApp
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/rhetos/swagger.json", "Rhetos REST API"));
             }
 
+            // FOR STANDARD APPS WITH A SINGLE APPLICATION DATABASE:
+            app.UseRecurringJobsFromConfiguration(); // Initialize recurring jobs.
             app.UseRhetosHangfireServer(); // Start background job processing in current application.
+            app.UseHangfireDashboard();
 
-            var rhetosHost = app.ApplicationServices.GetRequiredService<RhetosHost>();
-            var connectionString = rhetosHost.GetRootContainer().Resolve<Rhetos.Utilities.ConnectionString>();
-            var jobStorageCollection = rhetosHost.GetRootContainer().Resolve<JobStorageCollection>();
-            var jobStorage = jobStorageCollection.GetStorage(connectionString);
-            app.UseHangfireDashboard(pathMatch: "/hangfire", storage: jobStorage);
+            // FOR MULTITENANT APPLICATIONS WITH DATABASE PER TENANT, WITHOUT A GLOBAL CONNECTION STRING:
+            //var hangfireDatabases = GetHangfireDatabases(app);
+            //foreach (var hangfireDatabase in hangfireDatabases)
+            //{
+            //    app.UseRecurringJobsFromConfiguration(hangfireDatabase.ConnectionString); // Initialize recurring jobs.
+            //    app.UseRhetosHangfireServer(null, hangfireDatabase.ConnectionString); // Start background job processing in current application.
+            //    app.UseHangfireDashboard(pathMatch: $"/hangfire{hangfireDatabase.TenantName}", storage: hangfireDatabase.JobStorage);
+            //}
 
             app.UseHttpsRedirection();
 
@@ -101,8 +109,24 @@ namespace TestApp
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
-                endpoints.MapHangfireDashboard(storage: jobStorage);
+
+                // FOR STANDARD APPS WITH A SINGLE APPLICATION DATABASE:
+                endpoints.MapHangfireDashboard();
+
+                // FOR MULTITENANT APPLICATIONS WITH DATABASE PER TENANT, WITHOUT A GLOBAL CONNECTION STRING:
+                //foreach (var hangfireDatabase in hangfireDatabases)
+                //    endpoints.MapHangfireDashboard(storage: hangfireDatabase.JobStorage);
             });
         }
+
+        // FOR MULTITENANT APPLICATIONS WITH DATABASE PER TENANT, WITHOUT A GLOBAL CONNECTION STRING:
+        //private static List<(string TenantName, string ConnectionString, JobStorage JobStorage)> GetHangfireDatabases(IApplicationBuilder app)
+        //{
+        //    var rhetosHost = app.ApplicationServices.GetRequiredService<RhetosHost>();
+        //    var jobStorageCollection = rhetosHost.GetRootContainer().Resolve<JobStorageCollection>();
+        //    return MultiTenantAutofacModule.AllTenants // Replace this line with custom code to get the list of tenant databases in your application.
+        //        .Select(tenant => (tenant.TenantName, tenant.ConnectionString, jobStorageCollection.GetStorage(tenant.ConnectionString)))
+        //        .ToList();
+        //}
     }
 }

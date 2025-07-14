@@ -18,6 +18,8 @@
 */
 
 using Autofac;
+using Autofac.Core;
+using Autofac.Core.Lifetime;
 using Hangfire;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
@@ -111,6 +113,11 @@ namespace Rhetos
                 var rhetosHost = serviceProvider.GetRequiredService<RhetosHost>();
                 var rhetosHangfireInitialization = rhetosHost.GetRootContainer().Resolve<RhetosHangfireInitialization>();
                 rhetosHangfireInitialization.InitializeGlobalConfiguration();
+
+                // Initialize the global job storage for Hangfire Dashboard, if the global connection string is available.
+                var globalJobStorage = TryGetGlobalJobStorage(rhetosHost.GetRootContainer());
+                if (globalJobStorage != null)
+                    rhetosHangfireInitialization.InitializeGlobalJobStorage(globalJobStorage);
             });
         }
 
@@ -132,30 +139,12 @@ namespace Rhetos
         /// </param>
         public static IApplicationBuilder UseRhetosHangfireServer(this IApplicationBuilder applicationBuilder, params Action<BackgroundJobServerOptions>[] configureOptions)
         {
-            return UseRhetosHangfireServer(applicationBuilder, configureOptions?.Select(co => ((string)null, co))?.ToArray());
-        }
+            if (configureOptions.Length == 0)
+                configureOptions = [null];
 
-        /// <summary>
-        /// Starts background job processing in the current application's process.
-        /// </summary>
-        /// <remarks>
-        /// It creates a new instance of Hangfire <see cref="BackgroundJobServer"/>.
-        /// It uses app settings from <see cref="RhetosJobHangfireOptions"/> for <see cref="BackgroundJobServerOptions"/>.
-        /// The created <see cref="BackgroundJobServer"/> will start processing background jobs immediately.
-        /// <para>
-        /// Remove this method call if the background jobs need to be processed in a separate application (e.g. a Windows service), instead of the current application.
-        /// </para>
-        /// </remarks>
-        /// <param name="configurations">
-        /// Use this parameter to run multiple background job servers with different Hangfire options.
-        /// If not provided, one background job server will be started with default settings.
-        /// The Action may be null for any background job server; it uses app setting for <see cref="RhetosJobHangfireOptions"/> by default.
-        /// Connection string can be null, if there is global connection string available for the application (for multitenant app with database per tenant, specify the connection strings).
-        /// </param>
-        public static IApplicationBuilder UseRhetosHangfireServer(this IApplicationBuilder applicationBuilder, (string connectionString, Action<BackgroundJobServerOptions> configureOptions)[] configurations)
-        {
-            var rhetosHost = applicationBuilder.ApplicationServices.GetRequiredService<RhetosHost>();
-            UseRhetosHangfireServer(rhetosHost, configurations);
+            foreach (var configure in configureOptions)
+                UseRhetosHangfireServer(applicationBuilder, configure, connectionString: null);
+
             return applicationBuilder;
         }
 
@@ -170,31 +159,51 @@ namespace Rhetos
         /// Remove this method call if the background jobs need to be processed in a separate application (e.g. a Windows service), instead of the current application.
         /// </para>
         /// </remarks>
-        /// <param name="configurations">
-        /// Use this parameter to run multiple background job servers with different Hangfire options.
-        /// If not provided, one background job server will be started with default settings.
-        /// The Action may be <see langword="null"/> for any background job server; it uses app setting for <see cref="RhetosJobHangfireOptions"/> by default.
-        /// Connection string can be <see langword="null"/>, if there is global connection string available for the application (for multitenant app with database per tenant, specify the connection strings).
+        /// <param name="configureOptions">
+        /// The configuration parameter may be <see langword="null"/>; it uses app setting for <see cref="RhetosJobHangfireOptions"/> by default.
         /// </param>
-        public static void UseRhetosHangfireServer(RhetosHost rhetosHost, params (string connectionString, Action<BackgroundJobServerOptions> configureOptions)[] configurations)
+        /// <param name="connectionString">
+        /// Connection string should be <see langword="null"/>, if there is global connection string available for the application.
+        /// If the connection string is specified, the job server will be created in a separate lifetime scope with custom connection string.
+        /// Use this for multitenant apps with separate database per tenant.
+        /// </param>
+        public static IApplicationBuilder UseRhetosHangfireServer(this IApplicationBuilder applicationBuilder, Action<BackgroundJobServerOptions> configureOptions, string connectionString)
         {
-            var container = rhetosHost.GetRootContainer();
-            GlobalConfiguration.Configuration.UseAutofacActivator(container);
+            var _ = applicationBuilder.ApplicationServices.GetService<IGlobalConfiguration>(); // Forces the initialization of global Autofac components, such as logging.
+            var rhetosHost = applicationBuilder.ApplicationServices.GetRequiredService<RhetosHost>();
+            var jobServers = rhetosHost.GetRootContainer().Resolve<JobServersCollection>();
+            jobServers.CreateJobServer(rhetosHost, configureOptions, connectionString);
+            return applicationBuilder;
+        }
 
-            if (configurations.Length == 0)
-                configurations = [(null, null)];
+        /// <summary>
+        /// Returns <see langword="null"/> if the global connection string is not available (e.g. some multitenant apps).
+        /// </summary>
+        public static string TryGetGlobalConnectionString(ILifetimeScope lifetimeScope)
+        {
+            // Checking the registration, to avoid exceptions, because the "TryResolve" method throws an exception if the component is registered with a MatchingScopeLifetime that does not match the root container.
+            bool registered = lifetimeScope.ComponentRegistry.TryGetRegistration(new TypedService(typeof(ConnectionString)), out var registration);
+            if (!registered)
+                return null;
+            if (registration.Lifetime is MatchingScopeLifetime)
+                return null;
 
-            ConnectionString globalConnectionString = null;
-            container.TryResolve(out globalConnectionString);
+            ConnectionString connectionString = null;
+            lifetimeScope.TryResolve(out connectionString);
+            return connectionString?.ToString(); // Note that the ConnectionString instance may be *not null* even if the connection string is not available in the configuration, but then the string value if this instance will be *null*.
+        }
 
-            foreach (var c in configurations)
+        public static JobStorage TryGetGlobalJobStorage(ILifetimeScope lifetimeScope)
+        {
+            string globalConnectionString = TryGetGlobalConnectionString(lifetimeScope);
+            if (globalConnectionString != null)
             {
-                if (globalConnectionString == null && c.connectionString == null)
-                    throw new ArgumentException($"There is no global connection string registered and the connection string parameter is not specified in the '{nameof(configurations)}' method parameter.");
-
-                var jobServers = container.Resolve<JobServersCollection>();
-                jobServers.CreateJobServer(c.connectionString ?? globalConnectionString, c.configureOptions);
+                var jobStorageCollection = lifetimeScope.Resolve<JobStorageCollection>();
+                var jobStorage = jobStorageCollection.GetStorage(globalConnectionString);
+                return jobStorage;
             }
+            else
+                return null;
         }
 
         /// <summary>
@@ -205,10 +214,30 @@ namespace Rhetos
         /// <remarks>
         /// This method will not create the recurring jobs if the configuration option <see cref="RecurringJobsOptions.UpdateRecurringJobsFromConfigurationOnStartup"/> is disabled.
         /// </remarks>
+        [Obsolete("Use the method 'UseRecurringJobsFromConfiguration' instead.")]
         public static IApplicationBuilder UseRhetosJobsFromConfiguration(this IApplicationBuilder applicationBuilder)
+            => UseRecurringJobsFromConfiguration(applicationBuilder);
+
+        /// <summary>
+        /// Recurring jobs can be specified in the application's settings.
+        /// This method schedules the recurring background jobs from the configuration,
+        /// and cancels any obsolete scheduled jobs when removed from configuration.
+        /// </summary>
+        /// <remarks>
+        /// The <paramref name="connectionString"/> parameter can be null, if there is global connection string available for the application (for multitenant app with database per tenant, specify the connection strings).
+        /// This method will not create the recurring jobs if the configuration option <see cref="RecurringJobsOptions.UpdateRecurringJobsFromConfigurationOnStartup"/> is disabled.
+        /// </remarks>
+        public static IApplicationBuilder UseRecurringJobsFromConfiguration(this IApplicationBuilder applicationBuilder, string connectionString = null)
         {
+            var _ = applicationBuilder.ApplicationServices.GetService<IGlobalConfiguration>(); // Forces the initialization of global Autofac components, such as logging.
             var rhetosHost = applicationBuilder.ApplicationServices.GetRequiredService<RhetosHost>();
-            RecurringJobsFromConfigurationOnStartup.Initialize(rhetosHost);
+
+            string globalConnectionString = TryGetGlobalConnectionString(rhetosHost.GetRootContainer());
+            string useConnectionString = connectionString ?? globalConnectionString;
+            if (useConnectionString == null)
+                throw new ArgumentException($"The connection string is not specified in this method call, and there is no global connection string available.");
+
+            RecurringJobsFromConfigurationOnStartup.Initialize(rhetosHost, useConnectionString);
             return applicationBuilder;
         }
     }

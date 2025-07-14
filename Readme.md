@@ -20,7 +20,8 @@ Contents:
    3. [Recurring jobs on Hangfire](#recurring-jobs-on-hangfire)
    4. [Adding Hangfire Dashboard UI](#adding-hangfire-dashboard-ui)
    5. [Running job server in a separate CLI application](#running-job-server-in-a-separate-cli-application)
-   6. [Troubleshooting](#troubleshooting)
+   6. [Multitenancy](#multitenancy)
+   7. [Troubleshooting](#troubleshooting)
       1. [ThreadAbortException](#threadabortexception)
 3. [How to contribute](#how-to-contribute)
    1. [Building and testing the source code](#building-and-testing-the-source-code)
@@ -133,7 +134,7 @@ If you want to run the background jobs in the **Rhetos web application**:
 
 1. In `Startup.Configure` method, add:
    ```cs
-   app.UseRhetosJobsFromConfiguration(); // Initialize recurring jobs.
+   app.UseRecurringJobsFromConfiguration(); // Initialize recurring jobs.
    app.UseRhetosHangfireServer(); // Start background job processing in current application.
    ```
 2. If running the application on IIS, follow the instructions in section
@@ -228,6 +229,53 @@ Testing:
 * You can test the job runner utility with a LINQPad script that creates the jobs,
   for example see [AddJob.linq](https://github.com/Rhetos/Jobs/blob/master/test/TestApp/LinqPad/AddJob.linq).
 
+### Multitenancy
+
+In a multitenant application architecture with a single application and a separate database per tenant, there is no global database configuration available for hangfire.
+In that case, the application initialization should create a separate Hangfire Server instance and a separate Hangfire Dashboard for each tenant.
+
+For example, in a web application, use the following code in Program.cs or Startup.cs and modify it to match your application.
+For more info see [TestApp/Startup.cs](test/TestApp/Startup.cs).
+
+```cs
+// Program.cs or Startup.cs:
+...
+var hangfireDatabases = GetHangfireDatabases(app);
+foreach (var hangfireDatabase in hangfireDatabases)
+{
+    app.UseRecurringJobsFromConfiguration(hangfireDatabase.ConnectionString); // Initialize recurring jobs.
+    app.UseRhetosHangfireServer(null, hangfireDatabase.ConnectionString); // Start background job processing in current application.
+    app.UseHangfireDashboard(pathMatch: $"/hangfire{hangfireDatabase.TenantName}", storage: hangfireDatabase.JobStorage);
+}
+...
+app.UseEndpoints(endpoints =>
+{
+    endpoints.MapControllers();
+    ...
+    foreach (var hangfireDatabase in hangfireDatabases)
+        endpoints.MapHangfireDashboard(storage: hangfireDatabase.JobStorage);
+});
+...
+
+private static List<(string TenantName, string ConnectionString, JobStorage JobStorage)> GetHangfireDatabases(IApplicationBuilder app)
+{
+    var rhetosHost = app.ApplicationServices.GetRequiredService<RhetosHost>();
+    var jobStorageCollection = rhetosHost.GetRootContainer().Resolve<JobStorageCollection>();
+    return MultiTenantAutofacModule.AllTenants // Replace this line with custom code to get the list of tenant databases in your application.
+        .Select(tenant => (tenant.TenantName, tenant.ConnectionString, jobStorageCollection.GetStorage(tenant.ConnectionString)))
+        .ToList();
+}
+```
+
+If you are developing a CLI application that only runs Hangfire jobs, use the following code to start a separate Hangfire server for each tenant's database.
+For more info see [JobRunner/Program.cs](Tools/JobRunner/Program.cs).
+
+```cs
+var jobServers = rhetosHost.GetRootContainer().Resolve<JobServersCollection>();
+foreach (var tenant in MultiTenantAutofacModule.AllTenants)
+    jobServers.CreateJobServer(rhetosHost, configureOptions: null, connectionString: tenant.ConnectionString);
+```
+
 ### Troubleshooting
 
 #### ThreadAbortException
@@ -236,6 +284,16 @@ Testing:
 Review the Hangfire documentation:
 For console apps and Windows services, make sure to [Dispose BackgroundJobServer](https://docs.hangfire.io/en/latest/background-processing/processing-background-jobs.html) before exiting the application.
 For web applications, reduce the issue with [Making ASP.NET application always running](https://docs.hangfire.io/en/latest/deployment-to-production/making-aspnet-app-always-running.html).
+
+#### Multitenancy issues
+
+In a multitenant app with a separate database per tenant, where there is no single global database, any of the following errors might occur if the Hangfire initialization expects the single global database:
+
+* "Unable to resolve the type 'Rhetos.Utilities.ConnectionString' because the lifetime scope it belongs in can't be located."
+* "The connection string is not specified in this method call, and there is no global connection string available."
+* "Current JobStorage instance has not been initialized yet"
+
+In case of those errors, see [Multitenancy](#multitenancy) section above for configuring the app with multiple databases.
 
 ## How to contribute
 

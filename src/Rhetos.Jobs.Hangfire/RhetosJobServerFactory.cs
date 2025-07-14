@@ -17,7 +17,9 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using Autofac;
 using Hangfire;
+using Rhetos.Utilities;
 using System;
 
 namespace Rhetos.Jobs.Hangfire
@@ -46,15 +48,16 @@ namespace Rhetos.Jobs.Hangfire
         /// </summary>
         /// <remarks>
         /// The Hangfire BackgroundJobServer will start processing background jobs immediately.
-        /// <para>
-        /// Before creating job server, the Hangfire's GlobalConfiguration must be configured to use Rhetos host DI container,
-        /// by calling <code>GlobalConfiguration.Configuration.UseAutofacActivator(rhetosHost.GetRootContainer());</code>
-        /// </para>
         /// </remarks>
+        /// <param name="lifetimeScope">
+        /// In most cases you need to provide <c>rhetosHost.GetRootContainer()</c> as a lifetime scope.
+        /// In a multitenant app with a separate database per tenant, configure the lifetime scope with the connection string for each tenant's database,
+        /// for example see <see cref="JobServersCollection.CreateJobServer(RhetosHost, Action{BackgroundJobServerOptions}, string)"/>.
+        /// </param>
         /// <param name="configureOptions">
         /// Overrides configuration loaded form app settings.
         /// </param>
-        public BackgroundJobServer CreateHangfireJobServer(string connectionString, Action<BackgroundJobServerOptions> configureOptions = null)
+        public BackgroundJobServer CreateHangfireJobServer(ILifetimeScope lifetimeScope, Action<BackgroundJobServerOptions> configureOptions = null)
         {
             var hangfireOptions = new BackgroundJobServerOptions
             {
@@ -68,10 +71,12 @@ namespace Rhetos.Jobs.Hangfire
                 ServerCheckInterval = TimeSpan.FromSeconds(_options.ServerCheckInterval),
                 CancellationCheckInterval = TimeSpan.FromSeconds(_options.CancellationCheckInterval),
                 Queues = _options.Queues,
+                Activator = new AutofacJobActivator(lifetimeScope),
             };
 
             configureOptions?.Invoke(hangfireOptions);
 
+            var connectionString = lifetimeScope.Resolve<ConnectionString>();
             JobStorage jobStorage = _jobStorageCollection.GetStorage(connectionString);
             return new BackgroundJobServer(hangfireOptions, jobStorage);
         }

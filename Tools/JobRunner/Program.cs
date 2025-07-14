@@ -18,13 +18,13 @@
 */
 
 using Autofac;
-using Hangfire;
 using Rhetos;
 using Rhetos.Jobs.Hangfire;
 using Rhetos.Logging;
 using Rhetos.Security;
 using Rhetos.Utilities;
 using System;
+using TestApp;
 
 namespace JobRunner
 {
@@ -43,7 +43,7 @@ namespace JobRunner
                 Console.WriteLine("JobRunner.exe <path to the Rhetos app assembly>");
                 return 1;
             }
-            // First command=line argument is a relative path to the Rhetos application's assembly, for example "Bookstore.dll"
+            // First command-line argument is a relative path to the Rhetos application's assembly, for example "Bookstore.dll"
             string rhetosAppPath = args[0];
             ConsoleLogger.MinLevel = EventType.Trace; // Use EventType.Info for less detailed log output.
             using (var rhetosHost = RhetosHost.CreateFrom(rhetosAppPath, ConfigureRhetosHostForConsoleApp))
@@ -51,22 +51,27 @@ namespace JobRunner
                 var container = rhetosHost.GetRootContainer();
                 string appName = typeof(Program).Assembly.GetName().Name;
                 var logger = container.Resolve<ILogProvider>().GetLogger(appName);
-                // Configure Hangfire to use Rhetos IoC container:
-                GlobalConfiguration.Configuration.UseAutofacActivator(container);
-                // RhetosJobServerFactory will use Hangfire configuration from the Rhetos app:
-                var rhetosJobServerFactory = container.Resolve<RhetosJobServerFactory>();
-                // Create and start a Hangfire jobs server:
-                // Multiple servers may be created if needed, with different configurations, see CreateHangfireJobServer arguments.
-                var connectionString = container.Resolve<ConnectionString>();
-                using (var hangfireJobServer = rhetosJobServerFactory.CreateHangfireJobServer(connectionString, null))
-                {
-                    logger.Info("Started a Hangfire job server.");
-                    Console.WriteLine("Press any key to stop the application.");
-                    Console.ReadKey(true);
-                    logger.Info("Stopping the Hangfire job server.");
-                }
-                logger.Info("Stopped the Hangfire job server.");
+                var jobServers = container.Resolve<JobServersCollection>();
+
+                logger.Info("Starting the Hangfire job servers.");
+
+                // Create and start a Hangfire jobs server, with Hangfire configuration from the Rhetos app.
+                // Multiple servers may be created if needed, with different configurations.
+                // JobServersCollection manages the job server shutdown when RhetosHost is disposed.
+
+                // FOR STANDARD APPS WITH A SINGLE APPLICATION DATABASE:
+                jobServers.CreateJobServer(rhetosHost, configureOptions: null, connectionString: null);
+
+                // FOR MULTITENANT APPLICATIONS WITH DATABASE PER TENANT, WITHOUT A GLOBAL CONNECTION STRING:
+                //foreach (var tenant in MultiTenantAutofacModule.AllTenants)
+                //    jobServers.CreateJobServer(rhetosHost, configureOptions: null, connectionString: tenant.ConnectionString);
+
+                logger.Info("Started the Hangfire job servers.");
+                logger.Info("Press any key to stop the application.");
+                Console.ReadKey(true);
+                logger.Info("Stopping the Hangfire job servers.");
             }
+            Console.WriteLine("Stopped the Hangfire job servers.");
             return 0;
         }
 
