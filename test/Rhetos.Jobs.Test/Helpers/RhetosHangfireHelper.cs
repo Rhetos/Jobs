@@ -112,7 +112,7 @@ namespace Rhetos.Jobs.Test
                     sqlExecuter.ExecuteReader(sql, reader => currentJobs.Add($"{reader.GetInt64(0)} {reader.GetString(1)}"));
                 }
 
-                if (!currentJobs.Any())
+                if (currentJobs.Count == 0)
                     break;
 
                 const int timeoutSeconds = 30;

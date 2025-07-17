@@ -178,11 +178,16 @@ namespace Rhetos.Jobs.Hangfire
 				ExecuterType = typeof(TExecuter),
 				ParameterType = typeof(TParameter),
 				AggregationGroup = null,
-				EnqueueJob = () => recurringJobManager.AddOrUpdate<RhetosExecutionContext<TExecuter, TParameter>>(
-					name, context => context.ExecuteUnitOfWork(newJob, queue), cronExpression, TimeZoneInfo.Local, queue)
-			};
+				EnqueueJob = () =>
+                {
+#pragma warning disable CS0618 // Type or member is obsolete. The other recommended Hangfire's AddOrUpdate method also has different obsolete parameters, it seems that this version of Hangfire does not have a non-obsolete method with similar features.
+                    recurringJobManager.AddOrUpdate<RhetosExecutionContext<TExecuter, TParameter>>(
+                        name, context => context.ExecuteUnitOfWork(newJob, queue), cronExpression, TimeZoneInfo.Local, queue);
+#pragma warning restore CS0618 // Type or member is obsolete
+                }
+            };
 
-			_jobInstances.Add(schedule);
+            _jobInstances.Add(schedule);
 			_logger.Trace(() => $"Recurring job created.|{name}|{schedule.GetLogInfo()}");
 		}
 

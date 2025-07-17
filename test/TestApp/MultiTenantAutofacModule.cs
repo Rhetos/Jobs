@@ -3,6 +3,7 @@ using Rhetos;
 using Rhetos.MsSqlEf6.CommonConcepts;
 using Rhetos.Utilities;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.Composition;
 
 namespace TestApp
@@ -10,19 +11,11 @@ namespace TestApp
     //[Export(typeof(Module))]
     public class MultiTenantAutofacModule : Module
     {
-        public static (string TenantName, string ConnectionString)[] AllTenants =
+        public static IReadOnlyList<(string TenantName, string ConnectionString)> AllTenants { get; set; } =
         [
             ("Tenant1", "Data Source=localhost;Initial Catalog=RhetosJobs;Integrated Security=SSPI;"),
             ("Tenant2", "Data Source=localhost;Initial Catalog=RhetosJobs2;Integrated Security=SSPI;"),
         ];
-
-        public static string GetConnectionString()
-        {
-            if (DateTime.Now.Minute % 2 == 1)
-                return AllTenants[0].ConnectionString;
-            else
-                return AllTenants[1].ConnectionString;
-        }
 
         protected override void Load(ContainerBuilder builder)
         {
@@ -76,7 +69,11 @@ namespace TestApp
         {
             // TODO: Implement a custom connection string storage, and retrieve the tenant's connection string here.
             //return new ConnectionString($"CONNECTION_STRING_FOR_{tenant}");
-            return new ConnectionString(GetConnectionString());
+
+            if (DateTime.Now.Minute % 2 == 1)
+                return new ConnectionString(AllTenants[0].ConnectionString);
+            else
+                return new ConnectionString(AllTenants[1].ConnectionString);
         }
 
         private Ef6InitializationConnectionString GetEf6InitializationConnectionString(IComponentContext context)

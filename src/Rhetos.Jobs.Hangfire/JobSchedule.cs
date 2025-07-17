@@ -24,7 +24,7 @@ namespace Rhetos.Jobs.Hangfire
     /// <summary>
     /// Extended information on job, for job management before it is enqueued to Hangfire.
     /// </summary>
-    internal class JobSchedule
+    internal sealed class JobSchedule
 	{
 		public IJobParameter Job { get; set; }
 		public Type ExecuterType { get; set; }

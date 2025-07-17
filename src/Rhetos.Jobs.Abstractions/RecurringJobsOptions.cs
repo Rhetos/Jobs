@@ -33,7 +33,9 @@ namespace Rhetos.Jobs
 
         public bool UpdateRecurringJobsFromConfigurationOnStartup { get; set; } = true;
 
+#pragma warning disable CA2227 // Collection properties should be read only. This options class is intended for simple deserialization, so it does not use interfaces.
         public Dictionary<string, RecurringJobsDescription> Recurring { get; set; }
+#pragma warning restore CA2227 // Collection properties should be read only
 
         public static RecurringJobsOptions FromConfiguration(IConfiguration configuration)
         {

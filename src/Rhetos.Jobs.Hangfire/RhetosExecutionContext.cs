@@ -26,12 +26,14 @@ using System;
 
 namespace Rhetos.Jobs.Hangfire
 {
-	/// <summary>
-	/// This class is a job that is executed by Hangfire.
-	/// </summary>
-	/// <typeparam name="TExecuter"></typeparam>
-	/// <typeparam name="TParameter"></typeparam>
-    internal class RhetosExecutionContext<TExecuter, TParameter>
+#pragma warning disable CA1812 // An internal class is never instantiated. RhetosExecutionContext is instantiated from Hangfire by reflection.
+
+    /// <summary>
+    /// This class is a job that is executed by Hangfire.
+    /// </summary>
+    /// <typeparam name="TExecuter"></typeparam>
+    /// <typeparam name="TParameter"></typeparam>
+    internal sealed class RhetosExecutionContext<TExecuter, TParameter>
 		where TExecuter : IJobExecuter<TParameter>
 	{
 		private readonly ILogger _logger;
@@ -108,7 +110,7 @@ namespace Rhetos.Jobs.Hangfire
 				builder.RegisterType(typeof(ProcessUserInfo)).As<IUserInfo>();
 		}
 
-        private class JobExecuterUserInfo : IUserInfo
+        private sealed class JobExecuterUserInfo : IUserInfo
         {
             private readonly string _userName;
 
@@ -136,4 +138,5 @@ namespace Rhetos.Jobs.Hangfire
             private string ReportUserNameOrAnonymous() => IsUserRecognized ? UserName : "<anonymous>";
         }
     }
+#pragma warning restore CA1812 // An internal class is never instantiated.
 }

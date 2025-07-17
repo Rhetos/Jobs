@@ -25,7 +25,7 @@ namespace Rhetos.Jobs.Hangfire
     /// Job parameters required for job execution.
     /// It is serialized to the Hangfire job queue storage before executing it.
     /// </summary>
-    internal class JobParameter<TParameter> : IJobParameter
+    internal sealed class JobParameter<TParameter> : IJobParameter
 	{
 		public Guid Id { get; set; }
 

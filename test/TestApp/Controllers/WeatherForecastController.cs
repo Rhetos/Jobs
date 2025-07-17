@@ -45,14 +45,16 @@ namespace TestApp.Controllers
         [HttpGet]
         public IEnumerable<WeatherForecast> Get()
         {
-            var rng = new Random();
+#pragma warning disable CA5394 // Do not use insecure randomness
+            var random = new Random();
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast
             {
                 Date = DateTime.Now.AddDays(index),
-                TemperatureC = rng.Next(-20, 55),
-                Summary = Summaries[rng.Next(Summaries.Length)]
+                TemperatureC = random.Next(-20, 55),
+                Summary = Summaries[random.Next(Summaries.Length)]
             })
             .ToArray();
+#pragma warning restore CA5394 // Do not use insecure randomness
         }
     }
 }

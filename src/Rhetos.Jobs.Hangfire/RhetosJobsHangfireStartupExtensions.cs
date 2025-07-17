@@ -94,7 +94,9 @@ namespace Rhetos
             if (hangfireSqlCommandSetType == null)
                 throw new InvalidOperationException($"Unexpected version of Hangfire. Check if this hack is needed in the new version. Maybe the method {nameof(FixHangfireReflectionTypeLoadException)} can now be removed.");
 
+#pragma warning disable CS0618 // Type or member is obsolete
             Assembly sqlClientAssembly = typeof(System.Data.SqlClient.SqlConnection).Assembly;
+#pragma warning restore CS0618 // Type or member is obsolete
             Type sqlClientSqlCommandSet = sqlClientAssembly.GetType("System.Data.SqlClient.SqlCommandSet");
             if (sqlClientSqlCommandSet == null)
                 throw new InvalidOperationException($"Unexpected version of System.Data.SqlClient. Check if this hack is needed in the new version. Maybe the method {nameof(FixHangfireReflectionTypeLoadException)} can now be removed.");

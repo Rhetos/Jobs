@@ -103,7 +103,7 @@ namespace Rhetos.Jobs
             {
                 _sqlExecuter.GetDbLock(key);
             }
-            catch (UserException ex) when (ex.Message.Contains("currently unavailable"))
+            catch (UserException ex) when (ex.Message.Contains("currently unavailable", StringComparison.Ordinal))
             {
                 throw new InvalidOperationException(
                     "Cannot updated the recurring jobs, because the this data is locked by another process that is still running.",

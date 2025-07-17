@@ -195,7 +195,7 @@ namespace Rhetos.Jobs.Test
 			string report = string.Join(", ", actions.Select(action =>
 			{
 				string actionData = ((dynamic)action.ActionParameter).Data;
-                var job = hangfireJobs.Values.Single(j => j.JobArguments.Contains(actionData));
+                var job = hangfireJobs.Values.Single(j => j.JobArguments.Contains(actionData, StringComparison.Ordinal));
 				var eventQueueNames = events.Where(e => e.JobId == job.HangfireJobId).OrderBy(e => e.Id).Select(e => ParseQueueName(e.Data)).ToList();
 				return actionData.Split(' ')[0] + ": " + string.Join(",", eventQueueNames);
             }));

@@ -26,8 +26,10 @@ namespace TestApp
     public class LongRunningJobExecuter : IJobExecuter<int>
     {
         private readonly ILogger _logger;
+#pragma warning disable CA1805 // Do not initialize unnecessarily. The values are explicitly set to emphasize the initial values.
         private readonly int _instanceId = 0;
         private static int NextInstanceId = 0;
+#pragma warning restore CA1805 // Do not initialize unnecessarily.
 
         public LongRunningJobExecuter(ILogProvider logProvider)
         {
