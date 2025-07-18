@@ -53,15 +53,11 @@ namespace JobRunner
                 var logger = container.Resolve<ILogProvider>().GetLogger(appName);
                 var jobServers = container.Resolve<JobServersCollection>();
 
-                logger.Info("Starting the Hangfire job servers.");
-
                 // Create and start a Hangfire jobs server, with Hangfire configuration from the Rhetos app.
                 // Multiple servers may be created if needed, with different configurations.
                 // JobServersCollection manages the job server shutdown when RhetosHost is disposed.
-
                 // FOR STANDARD APPS WITH A SINGLE APPLICATION DATABASE:
                 jobServers.CreateJobServer(rhetosHost, configureOptions: null, connectionString: null);
-
                 // FOR MULTITENANT APPLICATIONS WITH DATABASE PER TENANT, WITHOUT A GLOBAL CONNECTION STRING:
                 //foreach (var tenant in MultiTenantAutofacModule.AllTenants)
                 //    jobServers.CreateJobServer(rhetosHost, configureOptions: null, connectionString: tenant.ConnectionString);

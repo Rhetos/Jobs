@@ -2,6 +2,17 @@
 
 ## 6.0.0 (TO-BE-RELEASED)
 
+...
+
+### Breaking changes
+
+* RhetosJobServerFactory.CreateHangfireJobServer method now requires ILifetimeScope parameter.
+  * In simple cases you can provide `rhetosHost.GetRootContainer()` for the parameter, but it is recommended
+    to use `JobServersCollection.CreateJobServer` instead of `RhetosJobServerFactory` for
+    more flexible configuration and more efficient management of multiple servers.
+    UseAutofacActivator is no longer needed if migrating to JobServersCollection,
+    see [JobRunner/Program.cs](Tools/JobRunner/Program.cs) for code sample.
+
 ## 5.4.0 (2025-04-30)
 
 * Changes from release 1.3.0:

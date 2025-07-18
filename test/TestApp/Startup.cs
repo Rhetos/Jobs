@@ -95,7 +95,7 @@ namespace TestApp
             //{
             //    app.UseRecurringJobsFromConfiguration(hangfireDatabase.ConnectionString); // Initialize recurring jobs.
             //    app.UseRhetosHangfireServer(null, hangfireDatabase.ConnectionString); // Start background job processing in current application.
-            //    app.UseHangfireDashboard(pathMatch: $"/hangfire{hangfireDatabase.TenantName}", storage: hangfireDatabase.JobStorage);
+            //    app.UseHangfireDashboard(pathMatch: $"/hangfire-{hangfireDatabase.TenantName}", storage: hangfireDatabase.JobStorage);
             //}
 
             app.UseHttpsRedirection();
