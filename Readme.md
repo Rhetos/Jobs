@@ -235,7 +235,7 @@ In a multitenant application architecture with a single application and a separa
 In that case, the application initialization should create a separate Hangfire Server instance and a separate Hangfire Dashboard for each tenant.
 
 For example, in a web application, use the following code in Program.cs or Startup.cs and modify it to match your application.
-For more info see [TestApp/Startup.cs](test/TestApp/Startup.cs).
+For more info see [TestApp/Startup.cs](test/TestApp/Startup.cs), and the [Multitenancy](https://github.com/Rhetos/Rhetos/wiki/Multitenancy) on the Rhetos wiki.
 
 ```cs
 // Program.cs or Startup.cs:

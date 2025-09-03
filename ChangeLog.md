@@ -1,8 +1,10 @@
 # Rhetos.Jobs Release notes
 
-## 6.0.0 (TO-BE-RELEASED)
+## 6.0.0 (2025-09-03)
 
-...
+* Update to .NET 8 and Rhetos 6.
+* Support for *multitenant* applications with separate database per tenant on a single application.
+  See the [Readme](Readme.md#multitenancy) for more info.
 
 ### Breaking changes
 
@@ -10,7 +12,7 @@
   * In simple cases you can provide `rhetosHost.GetRootContainer()` for the parameter, but it is recommended
     to use `JobServersCollection.CreateJobServer` instead of `RhetosJobServerFactory` for
     more flexible configuration and more efficient management of multiple servers.
-    UseAutofacActivator is no longer needed if migrating to JobServersCollection,
+    `UseAutofacActivator` is no longer needed if migrating to JobServersCollection,
     see [JobRunner/Program.cs](Tools/JobRunner/Program.cs) for code sample.
 
 ## 5.4.0 (2025-04-30)
