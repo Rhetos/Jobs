@@ -6,7 +6,7 @@
 * Support for *multitenant* applications with separate database per tenant on a single application.
   See the [Readme](Readme.md#multitenancy) for more info.
 
-### Breaking changes
+**Breaking changes:**
 
 * RhetosJobServerFactory.CreateHangfireJobServer method now requires ILifetimeScope parameter.
   * In simple cases you can provide `rhetosHost.GetRootContainer()` for the parameter, but it is recommended
@@ -38,7 +38,7 @@
 
 ## 5.0.0 (2022-03-25)
 
-### Breaking changes
+**Breaking changes:**
 
 1. Migrated from .NET Framework to .NET 5 and Rhetos 5.
 2. Removed method `RhetosJobServer.ConfigureHangfireJobServers`.
