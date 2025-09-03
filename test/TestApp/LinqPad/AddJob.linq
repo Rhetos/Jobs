@@ -47,9 +47,8 @@
 void Main()
 {
 	// MULTITENANT APP:
-	//Environment.SetEnvironmentVariable(
-	//	"MultitenantCommonInitializationConnectionString",
-	//	"Data Source=...");
+	//Environment.SetEnvironmentVariable("TestApp__Multitenancy__Enabled", "true");
+	//Environment.SetEnvironmentVariable("TestApp__Multitenancy__TenantsConnectionString", "Data Source=...");
 
 	ConsoleLogger.MinLevel = EventType.Info; // Use EventType.Trace for more detailed log.
 	string rhetosHostAssemblyPath = Path.Combine(Path.GetDirectoryName(Util.CurrentQueryPath), @"..\bin\debug\net8.0\TestApp.dll");

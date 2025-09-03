@@ -1,4 +1,4 @@
-﻿using Autofac;
+using Autofac;
 using Rhetos;
 using Rhetos.MsSqlEf6.CommonConcepts;
 using Rhetos.Utilities;
@@ -6,9 +6,9 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 
-namespace TestApp
+namespace TestApp.Multitenancy
 {
-    //[Export(typeof(Module))]
+    [Export(typeof(Module))]
     public class MultiTenantAutofacModule : Module
     {
         public static IReadOnlyList<(string TenantName, string ConnectionString)> AllTenants { get; set; } =
@@ -19,7 +19,13 @@ namespace TestApp
 
         protected override void Load(ContainerBuilder builder)
         {
+            var options = builder.GetRhetosConfiguration().GetOptions<MultitenancyOptions>();
+            if (!options.Enabled)
+                return;
+
             ExecutionStage stage = builder.GetRhetosExecutionStage();
+
+            builder.Register(context => context.Resolve<IConfiguration>().GetOptions<MultitenancyOptions>()).SingleInstance();
 
             if (stage.IsDatabaseUpdate || stage.IsApplicationInitialization)
                 builder.Register(GetConnectionStringForDbUpdate).As<ConnectionString>().SingleInstance();
@@ -30,8 +36,7 @@ namespace TestApp
             }
         }
 
-        const string dbUpdateTenantConfigurationKey = "Rhetos:DbUpdate:Tenant";
-        const string runtimeInitializationConnectionStringConfigurationKey = "MultitenantCommonInitializationConnectionString";
+        const string DbUpdateTenantConfigurationKey = "Rhetos:DbUpdate:Tenant";
 
         /// <summary>
         /// On deployment, admin can specify in configuration (e.g. in a local environment variable) the tenant name, or the database connection string.
@@ -41,17 +46,19 @@ namespace TestApp
             // 1. If the dbupdate is called for a specific tenant, update the tenant's database.
             // For example, DbUpdate can be configured by setting the environment variable in command line before running rhetos dbupdate: SET Rhetos__DbUpdate__Tenant=...
             var configuration = context.Resolve<IConfiguration>();
-            var tenant = configuration.GetValue<string>(dbUpdateTenantConfigurationKey);
+            var tenant = configuration.GetValue<string>(DbUpdateTenantConfigurationKey);
             if (!string.IsNullOrEmpty(tenant))
                 return GetTenantsConnectionString(tenant);
 
-            // 2. Otherwise, use the default database, if provided.
+            // 2. Otherwise, use the default Rhetos connection string, if the configuration value is provided.
             var sqlUtility = context.Resolve<ISqlUtility>();
-            var rhetosConnectionString = new ConnectionString(configuration, sqlUtility);
+            var databaseOptions = context.Resolve<DatabaseOptions>();
+            var rhetosConnectionString = new ConnectionString(configuration, sqlUtility, databaseOptions);
             if (!string.IsNullOrEmpty(rhetosConnectionString))
                 return rhetosConnectionString;
 
-            throw new ArgumentException($"The database connection string is not specified. Please set the configuration option '{dbUpdateTenantConfigurationKey}' or '{ConnectionString.ConnectionStringConfigurationKey}'.");
+            throw new ArgumentException($"The database is not specified. Please set the configuration option '{DbUpdateTenantConfigurationKey}'" +
+                $" or '{ConnectionString.ConnectionStringConfigurationKey}'.");
         }
 
         /// <summary>
@@ -76,14 +83,19 @@ namespace TestApp
                 return new ConnectionString(AllTenants[1].ConnectionString);
         }
 
+        /// <summary>
+        /// EF6 implementation requires a sample database for initialization, to retrieve the
+        /// database server technology and version for global EF6 configuration.
+        /// </summary>
         private Ef6InitializationConnectionString GetEf6InitializationConnectionString(IComponentContext context)
         {
-            var configuration = context.Resolve<IConfiguration>();
             var sqlUtility = context.Resolve<ISqlUtility>();
-            var rhetosConnectionString = new ConnectionString(ConnectionString.CreateConnectionString(configuration, sqlUtility, runtimeInitializationConnectionStringConfigurationKey));
-            if (string.IsNullOrEmpty(rhetosConnectionString))
-                throw new ArgumentException($"The database connection string is not specified. Please set the configuration option '{runtimeInitializationConnectionStringConfigurationKey}'.");
-            return new Ef6InitializationConnectionString(rhetosConnectionString);
+            var databaseOptions = context.Resolve<DatabaseOptions>();
+            var _multitenancyOptions = context.Resolve<MultitenancyOptions>();
+
+            _multitenancyOptions.ValidateTenantsConnectionString();
+            string connectionString = ConnectionString.GetConnectionStringWithAppName(_multitenancyOptions.TenantsConnectionString, sqlUtility, databaseOptions);
+            return new Ef6InitializationConnectionString(connectionString);
         }
     }
 }
